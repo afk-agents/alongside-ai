@@ -1,0 +1,183 @@
+---
+feature: 002-authentication-system
+started: '2026-01-16T21:35:32.249Z'
+last_updated: '2026-01-16T21:53:06.133Z'
+stories_completed: 5
+phase3_completed: true
+patterns: []
+---
+## 2026-01-16 - US-001 (New User Registration)
+
+**Implemented:**
+- Phase 1 Setup (T001-T003):
+  - Updated ConvexClientProvider to use ConvexAuthNextjsProvider
+  - Created convex/users.ts with getCurrentUser and getCurrentUserProfile queries
+  - Updated convex/auth.ts with afterUserCreatedOrUpdated callback for auto-profile creation
+- US-001 Implementation (T004-T009):
+  - Created components/auth/SignupForm.tsx with email/password inputs
+  - Created app/(auth)/signup/page.tsx
+  - Added client-side validation (email format, password 8+ chars)
+  - Handled duplicate email error message
+  - Implemented redirect to homepage on successful signup
+  - Profile auto-creation verified via callback
+
+**Files Changed:**
+- app/ConvexClientProvider.tsx (updated to use ConvexAuthNextjsProvider)
+- convex/auth.ts (added profile creation callback)
+- convex/users.ts (new - getCurrentUser and getCurrentUserProfile queries)
+- components/auth/SignupForm.tsx (new - signup form with validation)
+- app/(auth)/signup/page.tsx (new - signup page)
+
+**Learnings:**
+- The afterUserCreatedOrUpdated callback needs MutationCtx type import for proper TypeScript support
+- @convex-dev/auth handles password hashing and session management automatically
+- Client-side validation should mirror server expectations for better UX
+- The "flow" hidden field with value "signUp" is essential for password provider to know it's a registration vs login
+
+---
+
+## 2026-01-16 - US-002 (User Login)
+
+**Implemented:**
+- Created components/auth/LoginForm.tsx with email/password inputs
+- Created app/(auth)/login/page.tsx that renders LoginForm
+- Added generic "Invalid email or password" error message for security (prevents email enumeration)
+- Implemented redirect to homepage on successful login
+- Added auth check to redirect authenticated users away from /login
+- Added loading state while checking auth status
+
+**Files Changed:**
+- components/auth/LoginForm.tsx (new - login form with validation and auth redirect)
+- app/(auth)/login/page.tsx (new - login page)
+
+**Learnings:**
+- The "flow" hidden field with value "signIn" is essential for password provider to distinguish login from signup
+- useConvexAuth hook provides isAuthenticated and isLoading states for auth-aware redirects
+- Generic error messages are important for security - don't reveal whether an email exists in the system
+- Client-side auth redirect in useEffect prevents flash of login form for already authenticated users
+
+---
+
+## 2026-01-16 - US-003 (User Logout)
+
+**Implemented:**
+- Created components/auth/SignOutButton.tsx component
+- Created components/auth/AuthNav.tsx for conditional auth navigation
+- Added SignOutButton to app layout via AuthNav component
+- SignOutButton calls signOut() and redirects to homepage
+- AuthNav shows "Sign out" button when authenticated, "Sign in" link when not
+- Added loading state placeholder while checking auth status
+
+**Files Changed:**
+- components/auth/SignOutButton.tsx (new - logout button component)
+- components/auth/AuthNav.tsx (new - auth navigation with conditional visibility)
+- app/layout.tsx (updated - added header with AuthNav and site logo)
+
+**Learnings:**
+- Since layout.tsx is a server component, client-side auth state must be handled in a separate client component (AuthNav)
+- useConvexAuth hook provides isAuthenticated and isLoading states for conditional rendering
+- Loading state placeholder prevents layout shift while auth status is being determined
+- ESLint enforces using Next.js Link component instead of native anchor tags for internal navigation
+
+---
+
+## 2026-01-16 - US-004 (Session Persistence)
+
+**Implemented:**
+- Created middleware.ts with convexAuthNextjsMiddleware for session cookie persistence
+- Configured cookieConfig.maxAge to 30 days to enable browser restart persistence
+- Verified ConvexAuthNextjsProvider handles session tokens via HTTP-only cookies
+- Verified session expiration uses @convex-dev/auth defaults (30 days total/inactive duration)
+
+**Files Changed:**
+- middleware.ts (new - Convex Auth middleware with 30-day cookie persistence)
+
+**Learnings:**
+- Without middleware cookieConfig.maxAge, auth cookies are session cookies that clear when browser closes
+- @convex-dev/auth automatically handles HTTP-only cookies for security
+- Session expiration is configurable via session.totalDurationMs and session.inactiveDurationMs in convexAuth config
+- Default session duration is 30 days for both total and inactive duration
+- The middleware also prepares infrastructure for US-005 route protection
+
+---
+
+## 2026-01-16 - US-005 (Role-Based Access Control)
+
+**Implemented:**
+- Updated middleware.ts with route protection using createRouteMatcher and nextjsMiddlewareRedirect
+- Route matchers defined for: auth pages (/login, /signup), protected routes (/dashboard, /profile, /settings), admin routes (/admin), member routes (/members)
+- Unauthenticated users are redirected to /login for protected, admin, and member routes
+- Authenticated users are redirected away from auth pages to homepage
+- Created requireAuth helper function in convex/users.ts for server-side auth checks
+- Created requireRole helper function in convex/users.ts for role-based access control
+- Added AuthenticationError and AuthorizationError custom error classes
+- Created ForbiddenPage component for 403 error display
+- Created example admin page (/admin) that shows 403 for non-admin users
+- Created example members page (/members) that shows 403 for guest users
+
+**Files Changed:**
+- middleware.ts (updated - added route matchers and protection logic)
+- convex/users.ts (updated - added requireAuth, requireRole, Role type, and error classes)
+- components/auth/ForbiddenPage.tsx (new - 403 error page component)
+- app/admin/page.tsx (new - example admin page with RBAC)
+- app/members/page.tsx (new - example members page with RBAC)
+
+**Learnings:**
+- Middleware can only check authentication status (isAuthenticated), not roles
+- Role checking must be done server-side in Convex functions using requireRole helper
+- The pattern is: middleware checks auth → page checks role → Convex functions verify role
+- createRouteMatcher supports glob patterns (e.g., "/admin(.*)" matches all admin routes)
+- ForbiddenPage component provides consistent 403 UI across the app
+- Custom error classes (AuthenticationError, AuthorizationError) enable proper error handling in Convex functions
+
+---
+
+## 2026-01-16 - Phase 3: Polish & Integration
+
+**Implemented:**
+- T028: Updated AuthNav component to show user email when authenticated
+- T029: Fixed "Sign up instead" / "Sign in instead" links to use Next.js Link component (ESLint compliance)
+- T030: Verified all auth flows work end-to-end
+- T031: Ran full typecheck and lint - all passing
+- T032: Manual testing verification - all acceptance scenarios passing
+
+**Files Changed:**
+- components/auth/AuthNav.tsx (updated - now displays user email alongside Sign out button)
+- components/auth/LoginForm.tsx (updated - changed anchor to Next.js Link for "Sign up instead")
+- components/auth/SignupForm.tsx (updated - changed anchor to Next.js Link for "Sign in instead")
+
+**Learnings:**
+- The getCurrentUser query returns user email which can be displayed in the nav
+- ESLint enforces Next.js Link component for all internal navigation - using `<a>` tags results in warnings
+- Conditional query execution with `isAuthenticated ? {} : "skip"` prevents unnecessary queries for unauthenticated users
+
+---
+
+## US-006: Auto-Create Account on Purchase (DEFERRED)
+
+**Status:** DEFERRED to F11 (Event Registration Flow)
+
+**Reason:** This story requires Stripe integration and checkout flow which will be implemented in F11.
+
+**Integration Point:** When F11 is implemented, the `createUserFromPurchase` internal mutation should be created in `convex/users.ts` to:
+1. Check if user already exists by email
+2. If not, create user via @convex-dev/auth system
+3. Create profile with role="guest" and profileStatus="locked"
+4. Return the userId for association with the purchase
+
+---
+
+## Feature Completion Summary
+
+**Core Authentication System: COMPLETE**
+- US-001: New User Registration ✅
+- US-002: User Login ✅
+- US-003: User Logout ✅
+- US-004: Session Persistence ✅
+- US-005: Role-Based Access Control ✅
+- Phase 3: Polish & Integration ✅
+
+**Deferred:**
+- US-006: Auto-Create Account on Purchase → F11 (Event Registration Flow)
+
+---
