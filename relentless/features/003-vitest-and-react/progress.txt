@@ -56,3 +56,29 @@ stories_completed: 0
 - No type errors introduced by dependencies
 
 ---
+
+## 2026-01-16 - US-002 Complete
+
+**Implemented:**
+- Created vitest.config.ts with React plugin and jsdom environment
+- Created vitest.setup.ts with jest-dom matchers and automatic cleanup
+- Added Vitest type references to tsconfig.json for global API
+- Configured path alias resolution (`@/*`) matching tsconfig
+- Added `passWithNoTests: true` for clean initial setup experience
+
+**Files Changed:**
+- `vitest.config.ts` - NEW: Vitest configuration
+- `vitest.setup.ts` - NEW: Test setup with jest-dom
+- `tsconfig.json` - Added vitest/globals types
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (exits 0 with no tests)
+
+**Learnings:**
+- `bun test` uses Bun's built-in test runner; use `bun run test` for vitest
+- `passWithNoTests: true` prevents exit code 1 when no test files exist
+- Path alias config uses `path.resolve(__dirname, './')` for proper resolution
+
+---

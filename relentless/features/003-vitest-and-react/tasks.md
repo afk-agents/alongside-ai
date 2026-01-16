@@ -11,7 +11,7 @@
 | Story | Title | Priority | Status | Dependencies |
 |-------|-------|----------|--------|--------------|
 | US-001 | Install Testing Dependencies | P1 | complete | None |
-| US-002 | Configure Vitest | P1 | pending | US-001 |
+| US-002 | Configure Vitest | P1 | complete | US-001 |
 | US-003 | Test Utility Functions | P1 | pending | US-002 |
 | US-004 | Test React Components | P1 | pending | US-002 |
 | US-005 | Watch Mode for Development | P2 | pending | US-002 |
@@ -58,26 +58,26 @@
 **Description:** As a developer, I want Vitest configured correctly so that tests can run with React support and path aliases.
 
 **Acceptance Criteria:**
-- [ ] `vitest.config.ts` exists with React plugin enabled
-- [ ] jsdom environment is configured for DOM testing
-- [ ] `vitest.setup.ts` exists with jest-dom matchers and cleanup
-- [ ] Path alias `@/*` resolves to project root in test files
-- [ ] Test file patterns include `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
-- [ ] `globals: true` enables Jest-compatible API (describe, it, expect)
-- [ ] `bun test` command runs without errors (even with no tests)
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] `vitest.config.ts` exists with React plugin enabled
+- [x] jsdom environment is configured for DOM testing
+- [x] `vitest.setup.ts` exists with jest-dom matchers and cleanup
+- [x] Path alias `@/*` resolves to project root in test files
+- [x] Test file patterns include `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
+- [x] `globals: true` enables Jest-compatible API (describe, it, expect)
+- [x] `bun test` command runs without errors (even with no tests)
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** US-001
 **Phase:** Setup
 **Priority:** P1
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T005 [US-002] Create vitest.config.ts with React plugin and jsdom
-- [ ] T006 [US-002] Configure path alias resolution matching tsconfig
-- [ ] T007 [US-002] Create vitest.setup.ts with jest-dom and cleanup
-- [ ] T008 [US-002] Add Vitest type references for global API
+- [x] T005 [US-002] Create vitest.config.ts with React plugin and jsdom
+- [x] T006 [US-002] Configure path alias resolution matching tsconfig
+- [x] T007 [US-002] Create vitest.setup.ts with jest-dom and cleanup
+- [x] T008 [US-002] Add Vitest type references for global API
 
 ---
 

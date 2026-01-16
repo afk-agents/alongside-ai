@@ -48,7 +48,7 @@
         "T008 [US-002] Add Vitest type references for global API"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependencies": [
         "US-001"
