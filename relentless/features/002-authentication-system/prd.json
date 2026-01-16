@@ -118,22 +118,17 @@
     {
       "id": "US-006",
       "title": "Auto-Create Account on Purchase (DEFERRED)",
-      "description": "- **Phase 1 (Setup)**: No dependencies - start immediately, BLOCKS all stories - **Phase 2 (US-001 to US-005)**: Depend on Phase 1 completion - **US-006**: DEFERRED to F11 - **Phase 3 (Polish)**: Depends on all active user stories ``` Phase 1 (Setup) ├── US-001 (Registration) ──┐ ├── US-002 (Login) ─────────┼── Phase 3 (Polish) ├── US-003 (Logout) ────────┤ ├── US-004 (Session) ───────┤ └── US-005 (RBAC) ──────────┘ ``` Within Phase 1: - T001 and T002 can run in parallel - T003 depends on T002 (uses users.ts types) Within User Stories: - US-001, US-002, US-003, US-004, US-005 can all run in parallel after Phase 1 - Component tasks (T004, T010, T015) can run in parallel | Phase | User Story | Tasks | Priority | |-------|------------|-------|----------| | 1 | Setup | T001-T003 | - | | 2 | US-001: Registration | T004-T009 | P1 | | 2 | US-002: Login | T010-T014 | P1 | | 2 | US-003: Logout | T015-T017 | P2 | | 2 | US-004: Session | T018-T020 | P2 | | 2 | US-005: RBAC | T021-T025 | P2 | | 2 | US-006: Auto-Create | DEFERRED | P3 | | 3 | Polish | T028-T032 | - |",
+      "description": "DEFERRED to F11 (Event Registration Flow) as it requires Stripe integration. This story will be implemented when the checkout flow is built.",
       "acceptanceCriteria": [
         "Guest checkout creates user account with provided email",
         "Existing users are not duplicated",
         "New users have profile with role=\"guest\"",
         "T026 [US-006] Create internal mutation `createUserFromPurchase` in `convex/users.ts`",
-        "T027 [US-006] Integrate with event purchase flow (F11)",
-        "T028 [P] Add auth state indicator to layout (show user email or login link)",
-        "T029 [P] Add \"Sign up instead\" / \"Sign in instead\" links between auth pages",
-        "T030 Verify all auth flows work end-to-end",
-        "T031 Run full typecheck and lint",
-        "T032 Manual testing of all acceptance scenarios"
+        "T027 [US-006] Integrate with event purchase flow (F11)"
       ],
       "priority": 6,
       "passes": false,
-      "notes": "",
+      "notes": "DEFERRED to F11 (Event Registration Flow). Phase 3 Polish tasks (T028-T032) have been completed and are not blocking this feature. The core authentication system (US-001 through US-005) is complete.",
       "phase": "Stories"
     }
   ]

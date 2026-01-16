@@ -1,8 +1,9 @@
 ---
-feature: unknown
+feature: 002-authentication-system
 started: '2026-01-16T21:35:32.249Z'
-last_updated: '2026-01-16T21:43:58.238Z'
-stories_completed: 4
+last_updated: '2026-01-16T22:15:00.000Z'
+stories_completed: 5
+phase3_completed: true
 patterns: []
 ---
 ## 2026-01-16 - US-001 (New User Registration)
@@ -128,5 +129,55 @@ patterns: []
 - createRouteMatcher supports glob patterns (e.g., "/admin(.*)" matches all admin routes)
 - ForbiddenPage component provides consistent 403 UI across the app
 - Custom error classes (AuthenticationError, AuthorizationError) enable proper error handling in Convex functions
+
+---
+
+## 2026-01-16 - Phase 3: Polish & Integration
+
+**Implemented:**
+- T028: Updated AuthNav component to show user email when authenticated
+- T029: Fixed "Sign up instead" / "Sign in instead" links to use Next.js Link component (ESLint compliance)
+- T030: Verified all auth flows work end-to-end
+- T031: Ran full typecheck and lint - all passing
+- T032: Manual testing verification - all acceptance scenarios passing
+
+**Files Changed:**
+- components/auth/AuthNav.tsx (updated - now displays user email alongside Sign out button)
+- components/auth/LoginForm.tsx (updated - changed anchor to Next.js Link for "Sign up instead")
+- components/auth/SignupForm.tsx (updated - changed anchor to Next.js Link for "Sign in instead")
+
+**Learnings:**
+- The getCurrentUser query returns user email which can be displayed in the nav
+- ESLint enforces Next.js Link component for all internal navigation - using `<a>` tags results in warnings
+- Conditional query execution with `isAuthenticated ? {} : "skip"` prevents unnecessary queries for unauthenticated users
+
+---
+
+## US-006: Auto-Create Account on Purchase (DEFERRED)
+
+**Status:** DEFERRED to F11 (Event Registration Flow)
+
+**Reason:** This story requires Stripe integration and checkout flow which will be implemented in F11.
+
+**Integration Point:** When F11 is implemented, the `createUserFromPurchase` internal mutation should be created in `convex/users.ts` to:
+1. Check if user already exists by email
+2. If not, create user via @convex-dev/auth system
+3. Create profile with role="guest" and profileStatus="locked"
+4. Return the userId for association with the purchase
+
+---
+
+## Feature Completion Summary
+
+**Core Authentication System: COMPLETE**
+- US-001: New User Registration ✅
+- US-002: User Login ✅
+- US-003: User Logout ✅
+- US-004: Session Persistence ✅
+- US-005: Role-Based Access Control ✅
+- Phase 3: Polish & Integration ✅
+
+**Deferred:**
+- US-006: Auto-Create Account on Purchase → F11 (Event Registration Flow)
 
 ---

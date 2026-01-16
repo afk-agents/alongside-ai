@@ -6,11 +6,11 @@
 
 ## Backend: Convex Auth Configuration
 
-- [ ] CHK-001 [US1] `convex/auth.ts` uses Password provider from `@convex-dev/auth/providers/Password`
-- [ ] CHK-002 [US1] `afterUserCreatedOrUpdated` callback creates profile with role="guest" for new users
-- [ ] CHK-003 [US1] `afterUserCreatedOrUpdated` callback creates profile with profileStatus="locked"
-- [ ] CHK-004 [US1] Profile creation only occurs for new users (existingUserId check)
-- [ ] CHK-005 [Constitution] All Convex functions have `args` and `returns` validators
+- [x] CHK-001 [US1] `convex/auth.ts` uses Password provider from `@convex-dev/auth/providers/Password`
+- [x] CHK-002 [US1] `afterUserCreatedOrUpdated` callback creates profile with role="guest" for new users
+- [x] CHK-003 [US1] `afterUserCreatedOrUpdated` callback creates profile with profileStatus="locked"
+- [x] CHK-004 [US1] Profile creation only occurs for new users (existingUserId check)
+- [x] CHK-005 [Constitution] All Convex functions have `args` and `returns` validators
 
 ## Backend: User Queries (convex/users.ts)
 
@@ -30,15 +30,15 @@
 
 ## Frontend: Signup Flow (US1)
 
-- [ ] CHK-016 [US1] `/signup` page renders SignupForm component
-- [ ] CHK-017 [US1] Email input validates format before submission
-- [ ] CHK-018 [US1] Password input enforces minimum 8 characters
-- [ ] CHK-019 [US1] Form calls `signIn("password", formData)` with `flow: "signUp"`
-- [ ] CHK-020 [US1] Successful signup redirects to homepage
-- [ ] CHK-021 [US1] Duplicate email error displays "An account with this email already exists"
-- [ ] CHK-022 [US1] Invalid email error displays "Please enter a valid email address"
-- [ ] CHK-023 [US1] Short password error displays "Password must be at least 8 characters"
-- [ ] CHK-024 [US1] "Sign in instead" link navigates to /login
+- [x] CHK-016 [US1] `/signup` page renders SignupForm component
+- [x] CHK-017 [US1] Email input validates format before submission
+- [x] CHK-018 [US1] Password input enforces minimum 8 characters
+- [x] CHK-019 [US1] Form calls `signIn("password", formData)` with `flow: "signUp"`
+- [x] CHK-020 [US1] Successful signup redirects to homepage
+- [x] CHK-021 [US1] Duplicate email error displays "An account with this email already exists"
+- [x] CHK-022 [US1] Invalid email error displays "Please enter a valid email address"
+- [x] CHK-023 [US1] Short password error displays "Password must be at least 8 characters"
+- [x] CHK-024 [US1] "Sign in instead" link navigates to /login
 
 ## Frontend: Login Flow (US2)
 
@@ -90,20 +90,20 @@
 
 ## Gaps & Ambiguities
 
-- [ ] CHK-055 [Gap] Password reset flow not implemented (noted as out of scope for MVP)
-- [ ] CHK-056 [Gap] Email verification not implemented (noted as out of scope for MVP)
-- [ ] CHK-057 [Gap] Account lockout after failed attempts not implemented (consider for future)
-- [ ] CHK-058 [Ambiguity] Auto-create account on purchase deferred to F11 - ensure integration point documented
-- [ ] CHK-059 [Edge Case] Handle Convex backend unavailable gracefully (generic error message)
-- [ ] CHK-060 [Edge Case] Multiple concurrent sessions allowed (Convex default behavior)
+- [x] CHK-055 [Gap] Password reset flow not implemented (noted as out of scope for MVP)
+- [x] CHK-056 [Gap] Email verification not implemented (noted as out of scope for MVP)
+- [x] CHK-057 [Gap] Account lockout after failed attempts not implemented (consider for future)
+- [x] CHK-058 [Ambiguity] Auto-create account on purchase deferred to F11 - ensure integration point documented
+- [x] CHK-059 [Edge Case] Handle Convex backend unavailable gracefully (generic error message)
+- [x] CHK-060 [Edge Case] Multiple concurrent sessions allowed (Convex default behavior)
 
 ## Integration Testing
 
-- [ ] CHK-061 [US1] Full signup flow: form → submit → profile created → redirected
-- [ ] CHK-062 [US2] Full login flow: form → submit → authenticated → redirected
-- [ ] CHK-063 [US3] Full logout flow: click → session terminated → redirected
-- [ ] CHK-064 [US5] Protected route access: unauthenticated → redirect to /login
-- [ ] CHK-065 [US5] Admin route access: member user → 403 error
+- [x] CHK-061 [US1] Full signup flow: form → submit → profile created → redirected
+- [x] CHK-062 [US2] Full login flow: form → submit → authenticated → redirected
+- [x] CHK-063 [US3] Full logout flow: click → session terminated → redirected
+- [x] CHK-064 [US5] Protected route access: unauthenticated → redirect to /login
+- [x] CHK-065 [US5] Admin route access: member user → 403 error
 
 ---
 

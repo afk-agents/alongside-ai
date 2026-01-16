@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, FormEvent } from "react";
 
@@ -111,9 +112,9 @@ export function SignupForm() {
 
       <p className="text-sm text-center text-gray-600">
         Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <Link href="/login" className="text-blue-600 hover:underline">
           Sign in instead
-        </a>
+        </Link>
       </p>
     </form>
   );

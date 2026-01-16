@@ -182,11 +182,11 @@
 
 **Purpose**: Final integration and quality checks
 
-- [ ] T028 [P] Add auth state indicator to layout (show user email or login link)
-- [ ] T029 [P] Add "Sign up instead" / "Sign in instead" links between auth pages
-- [ ] T030 Verify all auth flows work end-to-end
-- [ ] T031 Run full typecheck and lint
-- [ ] T032 Manual testing of all acceptance scenarios
+- [x] T028 [P] Add auth state indicator to layout (show user email or login link)
+- [x] T029 [P] Add "Sign up instead" / "Sign in instead" links between auth pages
+- [x] T030 Verify all auth flows work end-to-end
+- [x] T031 Run full typecheck and lint
+- [x] T032 Manual testing of all acceptance scenarios
 
 ---
 

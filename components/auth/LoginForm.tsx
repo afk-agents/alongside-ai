@@ -2,6 +2,7 @@
 
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, FormEvent, useEffect } from "react";
 
@@ -99,9 +100,9 @@ export function LoginForm() {
 
       <p className="text-sm text-center text-gray-600">
         Don&apos;t have an account?{" "}
-        <a href="/signup" className="text-blue-600 hover:underline">
+        <Link href="/signup" className="text-blue-600 hover:underline">
           Sign up instead
-        </a>
+        </Link>
       </p>
     </form>
   );
