@@ -1,0 +1,30 @@
+# Progress Log: Database Schema & Core Models
+
+## 2026-01-16 - US-001: Profiles Table
+
+**Implemented:**
+- Defined `profiles` table in `convex/schema.ts` with all required fields
+- Added `userId` field linking to auth users via `v.id("users")`
+- Implemented role system with union validator: `admin`, `member`, `guest`
+- Implemented profileStatus with union validator: `locked`, `unlocked`, `published`
+- Added all optional fields: displayName, bio, photoUrl, socialLinks, workingOnNow, skills, location
+- Created `socialLinks` nested object with linkedin, twitter, github, website (all optional)
+- Added indexes: `by_userId`, `by_role`, `by_profileStatus`
+- Removed placeholder `numbers` table and `myFunctions.ts`
+- Fixed ESLint config to ignore `convex/_generated` files
+
+**Files Changed:**
+- `convex/schema.ts` - Replaced placeholder schema with profiles table
+- `convex/myFunctions.ts` - Removed (was placeholder depending on numbers table)
+- `eslint.config.mjs` - Added convex/_generated to ignores
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+
+**Learnings:**
+- The existing schema had a placeholder `numbers` table with associated `myFunctions.ts` that needed removal
+- Generated Convex files in `convex/_generated` weren't ignored by ESLint, causing warnings
+- authTables from @convex-dev/auth must be spread first in the schema definition
+
+---

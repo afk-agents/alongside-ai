@@ -1,0 +1,181 @@
+{
+  "project": "Database Schema & Core Models",
+  "branchName": "001-database-schema-core-models",
+  "description": "Define the complete Convex database schema for Alongside AI, including 9 tables: profiles, events, projects, experiments, articles, videos, playlists, tags, and testimonials. Establish role-based access control (admin/member/guest) and profile visibility states (locked/unlocked/published).",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Profiles Table",
+      "description": "As a developer, I need the profiles table defined so that content can reference author profiles. This is a blocking dependency for all content tables.",
+      "acceptanceCriteria": [
+        "`profiles` table defined in `convex/schema.ts`",
+        "`userId` field links to auth users table via `v.id(\"users\")`",
+        "`role` field uses union validator: `v.union(v.literal(\"admin\"), v.literal(\"member\"), v.literal(\"guest\"))`",
+        "`profileStatus` field uses union validator: `v.union(v.literal(\"locked\"), v.literal(\"unlocked\"), v.literal(\"published\"))`",
+        "All optional profile fields defined (displayName, bio, photoUrl, socialLinks, workingOnNow, skills, location)",
+        "`socialLinks` nested object validator includes: linkedin, twitter, github, website (all optional)",
+        "Indexes defined: `by_userId`, `by_role`, `by_profileStatus`",
+        "Remove placeholder `numbers` table from schema",
+        "TypeScript compiles without errors: `bunx tsc --noEmit`"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Blocking dependency - must complete before content tables",
+      "phase": "Foundation"
+    },
+    {
+      "id": "US-002",
+      "title": "Tags Table",
+      "description": "As a developer, I need the tags table defined so that content can reference tags for cross-content discovery.",
+      "acceptanceCriteria": [
+        "`tags` table defined in `convex/schema.ts`",
+        "Required fields: `name` (v.string()), `slug` (v.string())",
+        "Optional field: `description` (v.optional(v.string()))",
+        "Indexes defined: `by_slug`, `by_name`",
+        "TypeScript compiles without errors: `bunx tsc --noEmit`",
+        "Schema deploys successfully: `bunx convex dev`"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Blocking dependency - must complete before content tables",
+      "phase": "Foundation"
+    },
+    {
+      "id": "US-003",
+      "title": "Events Table",
+      "description": "As an admin, I want a complete events schema so that I can create and manage educational events with all required fields. Events are the primary revenue driver.",
+      "acceptanceCriteria": [
+        "`events` table defined in `convex/schema.ts`",
+        "Required fields: title, slug, description, date (v.number()), timezone, location, isVirtual (v.boolean()), priceInCents (v.number())",
+        "Optional fields: endDate, agenda, capacity, speakerIds, tags, isFeatured, isArchived",
+        "`speakerIds` uses `v.optional(v.array(v.id(\"profiles\")))`",
+        "`tags` uses `v.optional(v.array(v.id(\"tags\")))`",
+        "Indexes defined: `by_slug`, `by_date`, `by_isFeatured_and_date`",
+        "TypeScript compiles without errors: `bunx tsc --noEmit`",
+        "Schema deploys successfully: `bunx convex dev`",
+        "Can insert event with all fields via Convex Dashboard"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Primary revenue entity",
+      "dependencies": ["US-001", "US-002"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-004",
+      "title": "Profile Role System Validation",
+      "description": "As an admin, I want a profile system with roles so that I can manage user permissions (admin, member, guest).",
+      "acceptanceCriteria": [
+        "Profile table supports all three roles: admin, member, guest",
+        "Profile table supports all three statuses: locked, unlocked, published",
+        "Can query profiles by role using `by_role` index",
+        "Can query profiles by status using `by_profileStatus` index",
+        "Social links object supports: linkedin, twitter, github, website",
+        "Skills stored as array of strings: `v.optional(v.array(v.string()))`",
+        "TypeScript compiles without errors",
+        "Manual test: Insert profiles with each role via Convex Dashboard"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Validation of US-001 implementation",
+      "dependencies": ["US-001"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-005",
+      "title": "Projects Table",
+      "description": "As an admin, I want a projects schema so that I can showcase completed work with rich media support.",
+      "acceptanceCriteria": [
+        "`projects` table defined in `convex/schema.ts`",
+        "Required fields: title, slug, description, authorId (v.id(\"profiles\")), isPublished (v.boolean())",
+        "Optional fields: heroImageUrl, heroVideoUrl, caseStudy, demoUrl, repoUrl, youtubeEmbeds, tags, isFeatured",
+        "`authorId` references `profiles` table via `v.id(\"profiles\")`",
+        "`tags` references `tags` table as `v.optional(v.array(v.id(\"tags\")))`",
+        "Indexes: `by_slug`, `by_authorId`, `by_isPublished`, `by_isFeatured`",
+        "TypeScript compiles without errors"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "dependencies": ["US-001", "US-002"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-006",
+      "title": "Experiments Table",
+      "description": "As an admin, I want an experiments schema so that I can share in-progress work with status tracking.",
+      "acceptanceCriteria": [
+        "`experiments` table defined in `convex/schema.ts`",
+        "Required fields: title, slug, description, authorId, isPublished, status",
+        "`status` uses union validator: `v.union(v.literal(\"exploring\"), v.literal(\"prototyping\"), v.literal(\"paused\"), v.literal(\"concluded\"))`",
+        "Optional fields: heroImageUrl, heroVideoUrl, learningLog, figuringOut, demoUrl, repoUrl, youtubeEmbeds, tags, isFeatured",
+        "Indexes: `by_slug`, `by_authorId`, `by_status`, `by_isPublished`",
+        "TypeScript compiles without errors"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "dependencies": ["US-001", "US-002"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-007",
+      "title": "Articles Table",
+      "description": "As an admin, I want an articles schema so that I can publish blog content synced from Substack.",
+      "acceptanceCriteria": [
+        "`articles` table defined in `convex/schema.ts`",
+        "Required fields: title, slug, content (v.string()), authorId, publishedAt (v.number())",
+        "Optional fields: excerpt, tags, substackUrl, isFeatured",
+        "Indexes: `by_slug`, `by_authorId`, `by_publishedAt`, `by_isFeatured_and_publishedAt`",
+        "TypeScript compiles without errors"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "",
+      "dependencies": ["US-001", "US-002"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-008",
+      "title": "Videos & Playlists Tables",
+      "description": "As an admin, I want videos and playlists schemas so that I can organize YouTube educational content.",
+      "acceptanceCriteria": [
+        "`playlists` table defined with: title (required), slug (required), description (optional), displayOrder (optional)",
+        "`videos` table defined with required fields: title, slug, youtubeId, authorId, isPublished",
+        "`videos` optional fields: description, playlistId, duration, tags, isFeatured",
+        "`playlistId` references `playlists` table via `v.optional(v.id(\"playlists\"))`",
+        "Videos indexes: `by_slug`, `by_authorId`, `by_playlistId`, `by_isPublished`, `by_isFeatured`",
+        "Playlists index: `by_slug`",
+        "TypeScript compiles without errors",
+        "Schema deploys successfully: `bunx convex dev`"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "",
+      "dependencies": ["US-001", "US-002"],
+      "phase": "Stories"
+    },
+    {
+      "id": "US-009",
+      "title": "Testimonials Table",
+      "description": "As an admin, I want a testimonials schema so that I can display social proof from past event attendees.",
+      "acceptanceCriteria": [
+        "`testimonials` table defined in `convex/schema.ts`",
+        "Required fields: quote (v.string()), authorName (v.string())",
+        "Optional fields: authorRole, authorCompany, authorPhotoUrl, eventId, displayOrder, isFeatured",
+        "`eventId` references `events` table via `v.optional(v.id(\"events\"))`",
+        "Indexes: `by_eventId`, `by_isFeatured`, `by_displayOrder`",
+        "TypeScript compiles without errors",
+        "Schema deploys successfully: `bunx convex dev`",
+        "Lint passes: `bun run lint`",
+        "All 9 tables visible in Convex Dashboard",
+        "All indexes created and functional"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Final story - validates complete schema",
+      "dependencies": ["US-003"],
+      "phase": "Stories"
+    }
+  ]
+}
