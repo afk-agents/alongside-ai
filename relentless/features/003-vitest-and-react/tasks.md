@@ -15,7 +15,7 @@
 | US-003 | Test Utility Functions | P1 | complete | US-002 |
 | US-004 | Test React Components | P1 | complete | US-002 |
 | US-005 | Watch Mode for Development | P2 | complete | US-002 |
-| US-006 | Coverage Reporting | P3 | pending | US-002 |
+| US-006 | Coverage Reporting | P3 | complete | US-002 |
 
 **Total Stories**: 6
 **Parallel Opportunities**: US-003 and US-004 can be done in parallel after US-002
@@ -170,26 +170,26 @@
 **Description:** As a developer, I want to see test coverage reports so that I can identify untested code paths.
 
 **Acceptance Criteria:**
-- [ ] `bun test:coverage` generates a coverage report
-- [ ] Coverage report shows line coverage percentages
-- [ ] Coverage report shows function coverage percentages
-- [ ] Coverage report shows branch coverage percentages
-- [ ] HTML coverage report is generated in `coverage/` directory
-- [ ] `coverage/` is added to `.gitignore`
-- [ ] Coverage includes app/, components/, lib/ directories
-- [ ] Coverage excludes convex/_generated/ and test files
-- [ ] Typecheck passes
+- [x] `bun test:coverage` generates a coverage report
+- [x] Coverage report shows line coverage percentages
+- [x] Coverage report shows function coverage percentages
+- [x] Coverage report shows branch coverage percentages
+- [x] HTML coverage report is generated in `coverage/` directory
+- [x] `coverage/` is added to `.gitignore`
+- [x] Coverage includes app/, components/, lib/ directories
+- [x] Coverage excludes convex/_generated/ and test files
+- [x] Typecheck passes
 
 **Dependencies:** US-002
 **Phase:** Polish
 **Priority:** P3
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T021 [US-006] Configure coverage provider (v8) in vitest.config.ts
-- [ ] T022 [US-006] Configure coverage include/exclude patterns
-- [ ] T023 [US-006] Add coverage/ to .gitignore
-- [ ] T024 [US-006] Verify coverage report generates correctly
+- [x] T021 [US-006] Configure coverage provider (v8) in vitest.config.ts
+- [x] T022 [US-006] Configure coverage include/exclude patterns
+- [x] T023 [US-006] Add coverage/ to .gitignore
+- [x] T024 [US-006] Verify coverage report generates correctly
 
 ---
 

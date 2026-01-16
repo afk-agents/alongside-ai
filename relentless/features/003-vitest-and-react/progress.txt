@@ -2,7 +2,7 @@
 feature: Testing Infrastructure (Vitest + React Testing Library)
 started: 2026-01-16
 last_updated: 2026-01-16
-stories_completed: 0
+stories_completed: 6
 ---
 
 # Progress Log: Testing Infrastructure
@@ -165,5 +165,66 @@ stories_completed: 0
 - No additional configuration needed for watch mode
 - Vitest handles file watching automatically with sensible defaults
 - `bun run test:watch` maps to `vitest` (without `run` flag for persistent mode)
+
+---
+
+## 2026-01-16 - US-006 Complete
+
+**Implemented:**
+- Verified coverage configuration in vitest.config.ts (v8 provider)
+- Coverage report generates with `bun run test:coverage`
+- Added coverage/ to ESLint global ignores
+
+**Coverage Report:**
+- Shows line, function, branch coverage percentages
+- HTML report generated in `coverage/` directory
+- Includes app/, components/, lib/ directories
+- Excludes convex/_generated/, *.d.ts, *.test.* files
+- SignOutButton.tsx: 100% coverage
+- lib/example.ts: 100% coverage
+
+**Files Changed:**
+- `eslint.config.mjs` - Added coverage/** to global ignores
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test:coverage`: PASS
+
+**Learnings:**
+- Coverage was already configured in vitest.config.ts from US-002
+- coverage/ was already in .gitignore (Next.js default)
+- ESLint needed coverage/** added to global ignores to avoid lint warnings on generated files
+
+---
+
+## 2026-01-16 - Feature Complete
+
+**Summary:**
+All 6 user stories completed successfully:
+- US-001: Install Testing Dependencies ✓
+- US-002: Configure Vitest ✓
+- US-003: Test Utility Functions ✓
+- US-004: Test React Components ✓
+- US-005: Watch Mode for Development ✓
+- US-006: Coverage Reporting ✓
+
+**Test Infrastructure:**
+- 9 tests (5 utility + 4 component)
+- 100% coverage on tested files
+- Watch mode working
+- Coverage reporting working
+
+**Files Created/Modified:**
+- package.json (test scripts, devDependencies)
+- vitest.config.ts
+- vitest.setup.ts
+- tsconfig.json (vitest/globals types)
+- eslint.config.mjs (coverage ignores)
+- lib/example.ts
+- __tests__/lib/example.test.ts
+- __tests__/setup/test-utils.tsx
+- __tests__/setup/mocks/convex.ts
+- __tests__/components/auth/SignOutButton.test.tsx
 
 ---

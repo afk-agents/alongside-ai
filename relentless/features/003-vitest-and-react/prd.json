@@ -156,7 +156,7 @@
         "T024 [US-006] Verify coverage report generates correctly"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependencies": [
         "US-002"
