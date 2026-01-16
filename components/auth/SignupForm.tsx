@@ -47,14 +47,21 @@ export function SignupForm() {
       await signIn("password", formData);
       router.push("/");
     } catch (err) {
-      // Handle signup errors
+      console.error("Signup error:", err);
+
       const errorMessage =
         err instanceof Error ? err.message.toLowerCase() : "";
-      if (
+
+      // Check for network/connection errors
+      if (err instanceof TypeError || errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        setError("Unable to connect. Please check your internet connection.");
+      } else if (
         errorMessage.includes("already exists") ||
         errorMessage.includes("account already")
       ) {
         setError("An account with this email already exists");
+      } else if (errorMessage.includes("password")) {
+        setError("Password does not meet requirements. Please use at least 8 characters.");
       } else {
         setError("Unable to create account. Please try again later.");
       }
