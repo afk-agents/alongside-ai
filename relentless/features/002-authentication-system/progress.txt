@@ -1,3 +1,10 @@
+---
+feature: unknown
+started: '2026-01-16T21:35:32.249Z'
+last_updated: '2026-01-16T21:35:32.251Z'
+stories_completed: 2
+patterns: []
+---
 ## 2026-01-16 - US-001 (New User Registration)
 
 **Implemented:**
@@ -25,5 +32,27 @@
 - @convex-dev/auth handles password hashing and session management automatically
 - Client-side validation should mirror server expectations for better UX
 - The "flow" hidden field with value "signUp" is essential for password provider to know it's a registration vs login
+
+---
+
+## 2026-01-16 - US-002 (User Login)
+
+**Implemented:**
+- Created components/auth/LoginForm.tsx with email/password inputs
+- Created app/(auth)/login/page.tsx that renders LoginForm
+- Added generic "Invalid email or password" error message for security (prevents email enumeration)
+- Implemented redirect to homepage on successful login
+- Added auth check to redirect authenticated users away from /login
+- Added loading state while checking auth status
+
+**Files Changed:**
+- components/auth/LoginForm.tsx (new - login form with validation and auth redirect)
+- app/(auth)/login/page.tsx (new - login page)
+
+**Learnings:**
+- The "flow" hidden field with value "signIn" is essential for password provider to distinguish login from signup
+- useConvexAuth hook provides isAuthenticated and isLoading states for auth-aware redirects
+- Generic error messages are important for security - don't reveal whether an email exists in the system
+- Client-side auth redirect in useEffect prevents flash of login form for already authenticated users
 
 ---

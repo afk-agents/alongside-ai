@@ -49,8 +49,8 @@
         "T014 [US-002] Redirect authenticated users away from /login to homepage"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Completed - LoginForm.tsx and login page created with generic error messages and auth redirect",
       "phase": "Stories"
     },
     {

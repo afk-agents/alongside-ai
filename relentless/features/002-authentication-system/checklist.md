@@ -26,7 +26,7 @@
 - [ ] CHK-012 [US4] `ConvexClientProvider.tsx` uses `ConvexAuthNextjsProvider`
 - [ ] CHK-013 [US4] Provider correctly initializes `ConvexReactClient`
 - [ ] CHK-014 [US4] Session persistence works via HTTP-only cookies
-- [ ] CHK-015 [US2] `useAuthActions` hook available for signIn/signOut
+- [x] CHK-015 [US2] `useAuthActions` hook available for signIn/signOut
 
 ## Frontend: Signup Flow (US1)
 
@@ -42,13 +42,13 @@
 
 ## Frontend: Login Flow (US2)
 
-- [ ] CHK-025 [US2] `/login` page renders LoginForm component
-- [ ] CHK-026 [US2] Form calls `signIn("password", formData)` with `flow: "signIn"`
-- [ ] CHK-027 [US2] Successful login redirects to homepage
-- [ ] CHK-028 [US2] Invalid credentials show generic "Invalid email or password" (security)
-- [ ] CHK-029 [US2] Non-existent email shows same "Invalid email or password" (no enumeration)
-- [ ] CHK-030 [US2] Authenticated users redirected away from /login
-- [ ] CHK-031 [US2] "Sign up instead" link navigates to /signup
+- [x] CHK-025 [US2] `/login` page renders LoginForm component
+- [x] CHK-026 [US2] Form calls `signIn("password", formData)` with `flow: "signIn"`
+- [x] CHK-027 [US2] Successful login redirects to homepage
+- [x] CHK-028 [US2] Invalid credentials show generic "Invalid email or password" (security)
+- [x] CHK-029 [US2] Non-existent email shows same "Invalid email or password" (no enumeration)
+- [x] CHK-030 [US2] Authenticated users redirected away from /login
+- [x] CHK-031 [US2] "Sign up instead" link navigates to /signup
 
 ## Frontend: Logout Flow (US3)
 
@@ -74,7 +74,7 @@
 ## Security
 
 - [ ] CHK-044 [US1] Passwords never logged or exposed in error messages
-- [ ] CHK-045 [US2] Generic error messages prevent email enumeration
+- [x] CHK-045 [US2] Generic error messages prevent email enumeration
 - [ ] CHK-046 [US5] Role checked server-side in Convex functions (not just middleware)
 - [ ] CHK-047 [Constitution] No secrets committed to git
 - [ ] CHK-048 [Edge Case] Rate limiting handled by @convex-dev/auth
@@ -86,7 +86,7 @@
 - [ ] CHK-051 [Constitution] No `any` types in auth code
 - [ ] CHK-052 [Constitution] `"use client"` directive only on components that need it
 - [ ] CHK-053 [Constitution] Conventional commit format used for all commits
-- [ ] CHK-054 [Constitution] Components organized in `components/auth/` directory
+- [x] CHK-054 [Constitution] Components organized in `components/auth/` directory
 
 ## Gaps & Ambiguities
 

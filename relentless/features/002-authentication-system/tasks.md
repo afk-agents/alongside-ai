@@ -61,25 +61,25 @@
 **Description**: As a registered user, I want to sign in with email/password so that I can access my account.
 
 **Acceptance Criteria:**
-- [ ] User can navigate to /login page
-- [ ] Successful login authenticates user
-- [ ] User is redirected to homepage after login
-- [ ] Invalid credentials show "Invalid email or password" (not specific error)
-- [ ] Already logged-in users are redirected away from /login
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] User can navigate to /login page
+- [x] Successful login authenticates user
+- [x] User is redirected to homepage after login
+- [x] Invalid credentials show "Invalid email or password" (not specific error)
+- [x] Already logged-in users are redirected away from /login
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** None
 **Phase:** Stories
 **Priority:** P1
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T010 [P] [US-002] Create `components/auth/LoginForm.tsx` with email/password inputs
-- [ ] T011 [US-002] Create `app/(auth)/login/page.tsx` that renders LoginForm
-- [ ] T012 [US-002] Handle login errors: display generic "Invalid email or password" message
-- [ ] T013 [US-002] Redirect to homepage on successful login
-- [ ] T014 [US-002] Redirect authenticated users away from /login to homepage
+- [x] T010 [P] [US-002] Create `components/auth/LoginForm.tsx` with email/password inputs
+- [x] T011 [US-002] Create `app/(auth)/login/page.tsx` that renders LoginForm
+- [x] T012 [US-002] Handle login errors: display generic "Invalid email or password" message
+- [x] T013 [US-002] Redirect to homepage on successful login
+- [x] T014 [US-002] Redirect authenticated users away from /login to homepage
 
 ---
 
