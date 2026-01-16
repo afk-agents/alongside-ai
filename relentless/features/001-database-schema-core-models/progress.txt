@@ -1,8 +1,8 @@
 ---
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
-last_updated: '2026-01-16T21:45:00.000Z'
-stories_completed: 4
+last_updated: '2026-01-16T21:22:00.000Z'
+stories_completed: 5
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -108,5 +108,30 @@ patterns: []
 - US-004 is a validation story, not an implementation story - the profiles table was fully implemented in US-001
 - Profile role system validation confirms schema supports role-based access control patterns
 - The foundation work from US-001 already satisfied all US-004 acceptance criteria
+
+---
+
+## 2026-01-16 - US-005: Projects Table
+
+**Implemented:**
+- Defined `projects` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, authorId (v.id("profiles")), isPublished (v.boolean())
+- Optional fields: heroImageUrl, heroVideoUrl, caseStudy, demoUrl, repoUrl, youtubeEmbeds (v.array(v.string())), tags (v.array(v.id("tags"))), isFeatured
+- Created 4 indexes: `by_slug` (URL routing), `by_authorId` (author's projects), `by_isPublished` (public projects filter), `by_isFeatured` (featured projects)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added projects table with all fields and indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 4 new indexes)
+
+**Learnings:**
+- Projects table follows the same pattern as events - required/optional field grouping with comments
+- authorId is a required foreign key using v.id("profiles") validator (not optional, unlike speakerIds on events)
+- isPublished is required (v.boolean()) to enforce explicit draft/published state
+- youtubeEmbeds stores YouTube video IDs as string array for embedding support
 
 ---

@@ -83,4 +83,28 @@ export default defineSchema({
     .index("by_slug", ["slug"]) // URL routing
     .index("by_date", ["date"]) // Chronological listing, upcoming vs past
     .index("by_isFeatured_and_date", ["isFeatured", "date"]), // Featured events sorted by date
+
+  // Projects - completed work showcase with rich media support
+  projects: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+    description: v.string(), // Short description
+    authorId: v.id("profiles"), // Author profile reference
+    isPublished: v.boolean(), // Draft/published state
+
+    // Optional fields
+    heroImageUrl: v.optional(v.string()), // Hero image URL
+    heroVideoUrl: v.optional(v.string()), // Hero video URL
+    caseStudy: v.optional(v.string()), // Rich text case study
+    demoUrl: v.optional(v.string()), // Live demo link
+    repoUrl: v.optional(v.string()), // Repository link
+    youtubeEmbeds: v.optional(v.array(v.string())), // YouTube video IDs
+    tags: v.optional(v.array(v.id("tags"))), // Category tags
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+  })
+    .index("by_slug", ["slug"]) // URL routing
+    .index("by_authorId", ["authorId"]) // Author's projects
+    .index("by_isPublished", ["isPublished"]) // Public projects only
+    .index("by_isFeatured", ["isFeatured"]), // Featured projects
 });

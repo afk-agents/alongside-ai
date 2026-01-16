@@ -11,7 +11,7 @@
 - [x] CHK-001 [US-001] `profiles` table exists in `convex/schema.ts`
 - [x] CHK-002 [US-002] `tags` table exists in `convex/schema.ts`
 - [x] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
-- [ ] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
+- [x] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
 - [ ] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
 - [ ] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
 - [ ] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
@@ -53,10 +53,10 @@
 
 ### Projects
 
-- [ ] CHK-029 [US-005] `authorId` uses `v.id("profiles")` (required, not optional)
-- [ ] CHK-030 [US-005] `isPublished` uses `v.boolean()` (required, not optional)
-- [ ] CHK-031 [US-005] `youtubeEmbeds` uses `v.optional(v.array(v.string()))`
-- [ ] CHK-032 [US-005] Index `by_isPublished` defined for filtering published content
+- [x] CHK-029 [US-005] `authorId` uses `v.id("profiles")` (required, not optional)
+- [x] CHK-030 [US-005] `isPublished` uses `v.boolean()` (required, not optional)
+- [x] CHK-031 [US-005] `youtubeEmbeds` uses `v.optional(v.array(v.string()))`
+- [x] CHK-032 [US-005] Index `by_isPublished` defined for filtering published content
 
 ### Experiments
 
@@ -109,8 +109,8 @@
 - [x] CHK-058 [US-001] profiles.userId references auth `users` table correctly
 - [x] CHK-059 [US-003] events.speakerIds references `profiles` table correctly
 - [x] CHK-060 [US-003] events.tags references `tags` table correctly
-- [ ] CHK-061 [US-005] projects.authorId references `profiles` table correctly
-- [ ] CHK-062 [US-005] projects.tags references `tags` table correctly
+- [x] CHK-061 [US-005] projects.authorId references `profiles` table correctly
+- [x] CHK-062 [US-005] projects.tags references `tags` table correctly
 - [ ] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
 - [ ] CHK-064 [US-007] articles.authorId references `profiles` table correctly
 - [ ] CHK-065 [US-008] videos.authorId references `profiles` table correctly
