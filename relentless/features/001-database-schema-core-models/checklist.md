@@ -16,7 +16,7 @@
 - [x] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
 - [x] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
 - [x] CHK-008 [US-008] `playlists` table exists in `convex/schema.ts`
-- [ ] CHK-009 [US-009] `testimonials` table exists in `convex/schema.ts`
+- [x] CHK-009 [US-009] `testimonials` table exists in `convex/schema.ts`
 - [x] CHK-010 [Cleanup] Placeholder `numbers` table removed from schema
 
 ---
@@ -94,13 +94,13 @@
 
 ## Testimonials Table Validation
 
-- [ ] CHK-051 [US-009] `quote` is required string
-- [ ] CHK-052 [US-009] `authorName` is required string
-- [ ] CHK-053 [US-009] `eventId` uses `v.optional(v.id("events"))`
-- [ ] CHK-054 [US-009] `displayOrder` uses `v.optional(v.number())`
-- [ ] CHK-055 [US-009] Index `by_eventId` defined for event-specific queries
-- [ ] CHK-056 [US-009] Index `by_isFeatured` defined for featured testimonials
-- [ ] CHK-057 [US-009] Index `by_displayOrder` defined for ordered display
+- [x] CHK-051 [US-009] `quote` is required string
+- [x] CHK-052 [US-009] `authorName` is required string
+- [x] CHK-053 [US-009] `eventId` uses `v.optional(v.id("events"))`
+- [x] CHK-054 [US-009] `displayOrder` uses `v.optional(v.number())`
+- [x] CHK-055 [US-009] Index `by_eventId` defined for event-specific queries
+- [x] CHK-056 [US-009] Index `by_isFeatured` defined for featured testimonials
+- [x] CHK-057 [US-009] Index `by_displayOrder` defined for ordered display
 
 ---
 
@@ -115,27 +115,27 @@
 - [x] CHK-064 [US-007] articles.authorId references `profiles` table correctly
 - [x] CHK-065 [US-008] videos.authorId references `profiles` table correctly
 - [x] CHK-066 [US-008] videos.playlistId references `playlists` table correctly
-- [ ] CHK-067 [US-009] testimonials.eventId references `events` table correctly
+- [x] CHK-067 [US-009] testimonials.eventId references `events` table correctly
 
 ---
 
 ## Type Safety (Constitution Compliance)
 
-- [ ] CHK-068 [Constitution] All fields use Convex validators (`v.`)
-- [ ] CHK-069 [Constitution] No `any` types in schema definition
-- [ ] CHK-070 [Constitution] All optional fields use `v.optional()` wrapper
-- [ ] CHK-071 [Constitution] All ID references use `v.id("tableName")` not `v.string()`
-- [ ] CHK-072 [Constitution] Union types use `v.literal()` for each variant
-- [ ] CHK-073 [Constitution] Arrays use `v.array()` wrapper
-- [ ] CHK-074 [Constitution] Nested objects use `v.object()` with proper field definitions
+- [x] CHK-068 [Constitution] All fields use Convex validators (`v.`)
+- [x] CHK-069 [Constitution] No `any` types in schema definition
+- [x] CHK-070 [Constitution] All optional fields use `v.optional()` wrapper
+- [x] CHK-071 [Constitution] All ID references use `v.id("tableName")` not `v.string()`
+- [x] CHK-072 [Constitution] Union types use `v.literal()` for each variant
+- [x] CHK-073 [Constitution] Arrays use `v.array()` wrapper
+- [x] CHK-074 [Constitution] Nested objects use `v.object()` with proper field definitions
 
 ---
 
 ## Index Naming Convention (Constitution Compliance)
 
-- [ ] CHK-075 [Constitution] All index names include field names (e.g., `by_userId` not `userIndex`)
-- [ ] CHK-076 [Constitution] Multi-field indexes use combined names (e.g., `by_isFeatured_and_date`)
-- [ ] CHK-077 [Constitution] Index field order matches query patterns
+- [x] CHK-075 [Constitution] All index names include field names (e.g., `by_userId` not `userIndex`)
+- [x] CHK-076 [Constitution] Multi-field indexes use combined names (e.g., `by_isFeatured_and_date`)
+- [x] CHK-077 [Constitution] Index field order matches query patterns
 
 ---
 
@@ -145,8 +145,8 @@
 - [x] CHK-079 [Constitution] `bunx tsc --noEmit` passes with 0 errors
 - [x] CHK-080 [Constitution] `bun run lint` passes with 0 warnings
 - [x] CHK-081 [Constitution] `authTables` spread is preserved from @convex-dev/auth
-- [ ] CHK-082 [Validation] All 9 tables visible in Convex Dashboard
-- [ ] CHK-083 [Validation] All indexes visible in Convex Dashboard
+- [x] CHK-082 [Validation] All 9 tables visible in Convex Dashboard
+- [x] CHK-083 [Validation] All indexes visible in Convex Dashboard
 
 ---
 
@@ -159,7 +159,7 @@
 - [x] CHK-088 [US-003] Can insert event with tag references via Dashboard
 - [ ] CHK-089 [US-005] Can insert project with isPublished: true and false
 - [ ] CHK-090 [US-006] Can insert experiment with each status value
-- [ ] CHK-091 [US-009] Can insert testimonial with and without eventId
+- [x] CHK-091 [US-009] Can insert testimonial with and without eventId
 
 ---
 

@@ -191,4 +191,22 @@ export default defineSchema({
     .index("by_playlistId", ["playlistId"]) // Videos in playlist
     .index("by_isPublished", ["isPublished"]) // Public videos only
     .index("by_isFeatured", ["isFeatured"]), // Featured videos
+
+  // Testimonials - social proof quotes from past event attendees
+  testimonials: defineTable({
+    // Required fields
+    quote: v.string(), // Testimonial text
+    authorName: v.string(), // Person's name
+
+    // Optional fields
+    authorRole: v.optional(v.string()), // Job title
+    authorCompany: v.optional(v.string()), // Company name
+    authorPhotoUrl: v.optional(v.string()), // Photo URL
+    eventId: v.optional(v.id("events")), // Associated event (optional)
+    displayOrder: v.optional(v.number()), // Sort order for display
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+  })
+    .index("by_eventId", ["eventId"]) // Event-specific testimonials
+    .index("by_isFeatured", ["isFeatured"]) // Featured testimonials
+    .index("by_displayOrder", ["displayOrder"]), // Ordered display
 });

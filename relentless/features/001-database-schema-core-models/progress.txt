@@ -1,8 +1,8 @@
 ---
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
-last_updated: '2026-01-16T21:27:00.000Z'
-stories_completed: 8
+last_updated: '2026-01-16T21:05:00.000Z'
+stories_completed: 9
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -222,5 +222,33 @@ patterns: []
 - `duration` stores video length in seconds as v.number()
 - Index `by_playlistId` enables efficient queries for all videos in a playlist
 - Playlists is a simpler table primarily for grouping/organizing videos
+
+---
+
+## 2026-01-16 - US-009: Testimonials Table
+
+**Implemented:**
+- Defined `testimonials` table in `convex/schema.ts` for social proof quotes
+- Required fields: quote (v.string()), authorName (v.string())
+- Optional fields: authorRole, authorCompany, authorPhotoUrl, eventId (v.id("events")), displayOrder (v.number()), isFeatured (v.boolean())
+- Created 3 indexes: `by_eventId` (event-specific testimonials), `by_isFeatured` (featured testimonials), `by_displayOrder` (ordered display)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added testimonials table with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-009 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked testimonial validation items as verified
+- `relentless/features/001-database-schema-core-models/progress.txt` - Added this progress entry
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex deploy` - PASS (schema deployed successfully with 3 new indexes)
+
+**Learnings:**
+- Testimonials table completes the database schema - all 9 tables now defined
+- `eventId` is an optional reference to events table, allowing testimonials to be associated with specific events or used globally
+- Index `by_displayOrder` enables manual ordering of testimonials for display purposes
+- This is the final user story - feature is now complete
 
 ---

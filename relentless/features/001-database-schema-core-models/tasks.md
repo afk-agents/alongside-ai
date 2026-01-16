@@ -259,26 +259,27 @@
 **Description**: As an admin, I want a testimonials schema so that I can display social proof from past attendees.
 
 **Acceptance Criteria:**
-- [ ] `testimonials` table defined with all required fields
-- [ ] Required: `quote`, `authorName`
-- [ ] Optional: `authorRole`, `authorCompany`, `authorPhotoUrl`, `eventId`, `displayOrder`, `isFeatured`
-- [ ] `eventId` optional reference to `events` table
-- [ ] Indexes: `by_eventId`, `by_isFeatured`, `by_displayOrder`
-- [ ] Can query testimonials for specific event
-- [ ] Can query featured testimonials
-- [ ] TypeScript compiles without errors
-- [ ] Lint passes
+- [x] `testimonials` table defined with all required fields
+- [x] Required: `quote`, `authorName`
+- [x] Optional: `authorRole`, `authorCompany`, `authorPhotoUrl`, `eventId`, `displayOrder`, `isFeatured`
+- [x] `eventId` optional reference to `events` table
+- [x] Indexes: `by_eventId`, `by_isFeatured`, `by_displayOrder`
+- [x] Can query testimonials for specific event
+- [x] Can query featured testimonials
+- [x] TypeScript compiles without errors
+- [x] Lint passes
 
 **Dependencies:** US-003 (events - for eventId reference)
 **Phase:** Stories
 **Priority:** P3
+**Status:** COMPLETE
 
 ### Implementation Tasks - User Story 4
 
-- [ ] T033 [US-009] Add `testimonials` table definition in `convex/schema.ts`
-- [ ] T034 [US-009] Add indexes for `testimonials` table
-- [ ] T035 [US-009] Run `bunx convex dev` to deploy schema
-- [ ] T036 [US-009] Manual test: Insert testimonials with and without event association
+- [x] T033 [US-009] Add `testimonials` table definition in `convex/schema.ts`
+- [x] T034 [US-009] Add indexes for `testimonials` table
+- [x] T035 [US-009] Run `bunx convex dev` to deploy schema
+- [x] T036 [US-009] Manual test: Insert testimonials with and without event association
 
 **Checkpoint**: Testimonials schema complete
 
@@ -288,11 +289,11 @@
 
 **Purpose**: Final validation and quality checks
 
-- [ ] T037 Run full `bunx convex dev` deployment
-- [ ] T038 Run `bunx tsc --noEmit` - must pass with 0 errors
-- [ ] T039 Run `bun run lint` - must pass with 0 warnings
-- [ ] T040 Verify all 9 tables exist in Convex Dashboard
-- [ ] T041 Verify all indexes are created and functional
+- [x] T037 Run full `bunx convex dev` deployment
+- [x] T038 Run `bunx tsc --noEmit` - must pass with 0 errors
+- [x] T039 Run `bun run lint` - must pass with 0 warnings
+- [x] T040 Verify all 9 tables exist in Convex Dashboard
+- [x] T041 Verify all indexes are created and functional
 - [ ] T042 Insert test data for each table type via Dashboard
 - [ ] T043 Update feature status to Complete
 
