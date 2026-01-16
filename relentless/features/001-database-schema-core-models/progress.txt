@@ -1,0 +1,254 @@
+---
+feature: Database Schema & Core Models
+started: '2026-01-16T20:13:02.894Z'
+last_updated: '2026-01-16T21:05:00.000Z'
+stories_completed: 9
+patterns: []
+---
+# Progress Log: Database Schema & Core Models
+
+## 2026-01-16 - US-001: Profiles Table
+
+**Implemented:**
+- Defined `profiles` table in `convex/schema.ts` with all required fields
+- Added `userId` field linking to auth users via `v.id("users")`
+- Implemented role system with union validator: `admin`, `member`, `guest`
+- Implemented profileStatus with union validator: `locked`, `unlocked`, `published`
+- Added all optional fields: displayName, bio, photoUrl, socialLinks, workingOnNow, skills, location
+- Created `socialLinks` nested object with linkedin, twitter, github, website (all optional)
+- Added indexes: `by_userId`, `by_role`, `by_profileStatus`
+- Removed placeholder `numbers` table and `myFunctions.ts`
+- Fixed ESLint config to ignore `convex/_generated` files
+
+**Files Changed:**
+- `convex/schema.ts` - Replaced placeholder schema with profiles table
+- `convex/myFunctions.ts` - Removed (was placeholder depending on numbers table)
+- `eslint.config.mjs` - Added convex/_generated to ignores
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+
+**Learnings:**
+- The existing schema had a placeholder `numbers` table with associated `myFunctions.ts` that needed removal
+- Generated Convex files in `convex/_generated` weren't ignored by ESLint, causing warnings
+- authTables from @convex-dev/auth must be spread first in the schema definition
+
+---
+
+## 2026-01-16 - US-002: Tags Table
+
+**Implemented:**
+- Defined `tags` table in `convex/schema.ts` with required fields: name, slug
+- Added optional `description` field
+- Created indexes: `by_slug` (URL routing), `by_name` (lookup by name)
+- Added documentation comments explaining table purpose
+
+**Files Changed:**
+- `convex/schema.ts` - Added tags table with indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully)
+
+**Learnings:**
+- Convex automatically appends `_creationTime` to index fields
+- Foundation tables (profiles, tags) must be complete before content tables can reference them
+- Tags table is simple but critical for cross-content discovery functionality
+
+---
+
+## 2026-01-16 - US-003: Events Table
+
+**Implemented:**
+- Defined `events` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, date (v.number()), timezone, location, isVirtual (v.boolean()), priceInCents (v.number())
+- Optional fields: endDate, agenda, capacity, speakerIds (v.array(v.id("profiles"))), tags (v.array(v.id("tags"))), isFeatured, isArchived
+- Created indexes: `by_slug` (URL routing), `by_date` (chronological listing), `by_isFeatured_and_date` (featured events sorted by date)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added events table with all fields and indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 3 new indexes)
+
+**Learnings:**
+- Events table follows the same pattern as profiles and tags - required/optional field grouping with comments
+- speakerIds and tags are arrays of foreign key IDs using v.id() validator
+- priceInCents uses v.number() for integer storage (avoiding floating-point currency issues)
+- Compound index `by_isFeatured_and_date` enables efficient queries for featured events sorted chronologically
+
+---
+
+## 2026-01-16 - US-004: Profile Role System Validation
+
+**Implemented:**
+- Verified `profiles` table has correct role union validator: `admin`, `member`, `guest`
+- Verified `profiles` table has correct profileStatus union validator: `locked`, `unlocked`, `published`
+- Verified `by_role` index exists for querying profiles by role
+- Verified `by_profileStatus` index exists for querying profiles by status
+- Verified `socialLinks` nested object supports all required fields: linkedin, twitter, github, website
+- Verified `skills` field uses `v.optional(v.array(v.string()))`
+- All quality checks pass (TypeScript, ESLint)
+
+**Files Changed:**
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-004 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked profile validation items as verified
+- `relentless/features/001-database-schema-core-models/progress.txt` - Added this progress entry
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+
+**Learnings:**
+- US-004 is a validation story, not an implementation story - the profiles table was fully implemented in US-001
+- Profile role system validation confirms schema supports role-based access control patterns
+- The foundation work from US-001 already satisfied all US-004 acceptance criteria
+
+---
+
+## 2026-01-16 - US-005: Projects Table
+
+**Implemented:**
+- Defined `projects` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, authorId (v.id("profiles")), isPublished (v.boolean())
+- Optional fields: heroImageUrl, heroVideoUrl, caseStudy, demoUrl, repoUrl, youtubeEmbeds (v.array(v.string())), tags (v.array(v.id("tags"))), isFeatured
+- Created 4 indexes: `by_slug` (URL routing), `by_authorId` (author's projects), `by_isPublished` (public projects filter), `by_isFeatured` (featured projects)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added projects table with all fields and indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 4 new indexes)
+
+**Learnings:**
+- Projects table follows the same pattern as events - required/optional field grouping with comments
+- authorId is a required foreign key using v.id("profiles") validator (not optional, unlike speakerIds on events)
+- isPublished is required (v.boolean()) to enforce explicit draft/published state
+- youtubeEmbeds stores YouTube video IDs as string array for embedding support
+
+---
+
+## 2026-01-16 - US-006: Experiments Table
+
+**Implemented:**
+- Defined `experiments` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, authorId (v.id("profiles")), isPublished (v.boolean()), status
+- Status union validator: `exploring`, `prototyping`, `paused`, `concluded`
+- Optional fields: heroImageUrl, heroVideoUrl, learningLog, figuringOut, demoUrl, repoUrl, youtubeEmbeds (v.array(v.string())), tags (v.array(v.id("tags"))), isFeatured
+- Created 4 indexes: `by_slug` (URL routing), `by_authorId` (author's experiments), `by_status` (filter by experiment status), `by_isPublished` (public experiments filter)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added experiments table with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-006 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked experiment validation items as verified
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 4 new indexes)
+
+**Learnings:**
+- Experiments table follows the same pattern as projects but adds status tracking for in-progress work
+- The `status` field uses a union validator with 4 states to track experiment lifecycle
+- `learningLog` and `figuringOut` are optional string fields for documenting progress and challenges
+- Index `by_status` enables filtering experiments by their current state (exploring, prototyping, etc.)
+
+---
+
+## 2026-01-16 - US-007: Articles Table
+
+**Implemented:**
+- Defined `articles` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, content (v.string()), authorId (v.id("profiles")), publishedAt (v.number())
+- Optional fields: excerpt, tags (v.array(v.id("tags"))), substackUrl, isFeatured
+- Created 4 indexes: `by_slug` (URL routing), `by_authorId` (author's articles), `by_publishedAt` (chronological listing), `by_isFeatured_and_publishedAt` (featured articles sorted by date)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added articles table with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-007 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked article validation items as verified
+- `relentless/features/001-database-schema-core-models/prd.json` - Marked US-007 passes: true
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 4 new indexes)
+
+**Learnings:**
+- Articles table follows the same pattern as projects - required/optional field grouping with comments
+- `content` is a required string field for full article text (Markdown/HTML)
+- `publishedAt` uses v.number() for Unix timestamp to enable chronological queries
+- `substackUrl` is optional for linking back to original Substack article source
+- Compound index `by_isFeatured_and_publishedAt` enables efficient queries for featured articles sorted by publication date
+
+---
+
+## 2026-01-16 - US-008: Videos & Playlists Tables
+
+**Implemented:**
+- Defined `playlists` table in `convex/schema.ts` for video series groupings
+- Playlists required fields: title, slug
+- Playlists optional fields: description, displayOrder (v.number())
+- Defined `videos` table in `convex/schema.ts` for YouTube-hosted educational content
+- Videos required fields: title, slug, youtubeId (v.string()), authorId (v.id("profiles")), isPublished (v.boolean())
+- Videos optional fields: description, playlistId (v.id("playlists")), duration (v.number()), tags (v.array(v.id("tags"))), isFeatured
+- Playlists index: `by_slug` (URL routing)
+- Videos indexes: `by_slug`, `by_authorId`, `by_playlistId`, `by_isPublished`, `by_isFeatured`
+
+**Files Changed:**
+- `convex/schema.ts` - Added playlists and videos tables with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-008 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked video/playlist validation items as verified
+- `relentless/features/001-database-schema-core-models/prd.json` - Marked US-008 passes: true
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 6 new indexes)
+
+**Learnings:**
+- Videos table follows the same pattern as projects - required/optional field grouping with comments
+- `youtubeId` is required (stores YouTube video ID) while `playlistId` is optional reference to playlists table
+- `duration` stores video length in seconds as v.number()
+- Index `by_playlistId` enables efficient queries for all videos in a playlist
+- Playlists is a simpler table primarily for grouping/organizing videos
+
+---
+
+## 2026-01-16 - US-009: Testimonials Table
+
+**Implemented:**
+- Defined `testimonials` table in `convex/schema.ts` for social proof quotes
+- Required fields: quote (v.string()), authorName (v.string())
+- Optional fields: authorRole, authorCompany, authorPhotoUrl, eventId (v.id("events")), displayOrder (v.number()), isFeatured (v.boolean())
+- Created 3 indexes: `by_eventId` (event-specific testimonials), `by_isFeatured` (featured testimonials), `by_displayOrder` (ordered display)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added testimonials table with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-009 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked testimonial validation items as verified
+- `relentless/features/001-database-schema-core-models/progress.txt` - Added this progress entry
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex deploy` - PASS (schema deployed successfully with 3 new indexes)
+
+**Learnings:**
+- Testimonials table completes the database schema - all 9 tables now defined
+- `eventId` is an optional reference to events table, allowing testimonials to be associated with specific events or used globally
+- Index `by_displayOrder` enables manual ordering of testimonials for display purposes
+- This is the final user story - feature is now complete
+
+---
