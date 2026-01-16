@@ -49,6 +49,7 @@ From spec.md, identify distinct user stories:
 **User Story Format:**
 ```markdown
 ### US-001: [Title]
+
 **Description:** As a [user], I want [goal] so that [benefit].
 
 **Acceptance Criteria:**
@@ -58,9 +59,21 @@ From spec.md, identify distinct user stories:
 - [ ] Typecheck passes
 - [ ] Tests pass
 
-**Dependencies:** (if any)
-**Phase:** Foundation / Stories / Polish
+**Dependencies:** None
+**Phase:** Stories
+**Priority:** P1
+**Status:** pending
+
+**Implementation Tasks:**
+- [ ] T001 [US-001] Task description
 ```
+
+**CRITICAL - Format Requirements for `relentless convert`:**
+- **Dependencies:** Must be `None` or comma-separated story IDs (e.g., `US-001, US-002`)
+  - Do NOT use phase names like "Phase 1 (Setup)" - this will cause errors
+- **Status:** Must be one of: `pending`, `in_progress`, `complete`, `deferred`
+- **Priority:** Use `P1`, `P2`, `P3` format
+- **Story IDs:** Use 3-digit format with dash: `US-001` not `US1`
 
 ---
 
@@ -85,11 +98,16 @@ For each user story, create implementation tasks using format:
 - [ ] Returns 400 for invalid input
 - [ ] Typecheck passes
 - [ ] Unit tests pass
-- [ ] Integration test passes
 
 **Dependencies:** None
 **Phase:** Foundation
-**Priority:** 1
+**Priority:** P1
+**Status:** pending
+
+**Implementation Tasks:**
+- [ ] T001 [US-001] Create registration endpoint handler
+- [ ] T002 [US-001] Add email validation
+- [ ] T003 [US-001] Implement password hashing
 
 ---
 
@@ -102,15 +120,18 @@ For each user story, create implementation tasks using format:
 - [ ] Validates credentials against database
 - [ ] Returns JWT token on success
 - [ ] Returns 401 for invalid credentials
-- [ ] Returns 403 for unconfirmed accounts
 - [ ] Token expires after 24 hours
 - [ ] Typecheck passes
 - [ ] Unit tests pass
-- [ ] Integration test passes
 
 **Dependencies:** US-001
 **Phase:** Stories
-**Priority:** 2
+**Priority:** P2
+**Status:** pending
+
+**Implementation Tasks:**
+- [ ] T004 [US-002] Create login endpoint handler
+- [ ] T005 [US-002] Implement JWT token generation
 
 ---
 
@@ -124,13 +145,16 @@ For each user story, create implementation tasks using format:
 - [ ] GET /api/auth/confirm/:token endpoint exists
 - [ ] Token validates and marks account as confirmed
 - [ ] Expired tokens return appropriate error
-- [ ] Confirmed users can log in
 - [ ] Typecheck passes
-- [ ] E2E test passes
 
 **Dependencies:** US-001
 **Phase:** Stories
-**Priority:** 3
+**Priority:** P3
+**Status:** pending
+
+**Implementation Tasks:**
+- [ ] T006 [US-003] Create email confirmation endpoint
+- [ ] T007 [US-003] Implement token validation
 ```
 
 ---
@@ -188,7 +212,8 @@ Check that:
 - Verifiable in browser/tests
 
 **Dependencies:**
-- Only list direct dependencies
+- Only list direct dependencies as story IDs (e.g., `US-001, US-002`)
+- Use `None` if no dependencies (not empty, not phase names)
 - Ensure no circular dependencies
 - Consider data dependencies (user must exist before profile)
 
