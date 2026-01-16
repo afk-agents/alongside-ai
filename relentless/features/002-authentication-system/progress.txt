@@ -1,0 +1,29 @@
+## 2026-01-16 - US-001 (New User Registration)
+
+**Implemented:**
+- Phase 1 Setup (T001-T003):
+  - Updated ConvexClientProvider to use ConvexAuthNextjsProvider
+  - Created convex/users.ts with getCurrentUser and getCurrentUserProfile queries
+  - Updated convex/auth.ts with afterUserCreatedOrUpdated callback for auto-profile creation
+- US-001 Implementation (T004-T009):
+  - Created components/auth/SignupForm.tsx with email/password inputs
+  - Created app/(auth)/signup/page.tsx
+  - Added client-side validation (email format, password 8+ chars)
+  - Handled duplicate email error message
+  - Implemented redirect to homepage on successful signup
+  - Profile auto-creation verified via callback
+
+**Files Changed:**
+- app/ConvexClientProvider.tsx (updated to use ConvexAuthNextjsProvider)
+- convex/auth.ts (added profile creation callback)
+- convex/users.ts (new - getCurrentUser and getCurrentUserProfile queries)
+- components/auth/SignupForm.tsx (new - signup form with validation)
+- app/(auth)/signup/page.tsx (new - signup page)
+
+**Learnings:**
+- The afterUserCreatedOrUpdated callback needs MutationCtx type import for proper TypeScript support
+- @convex-dev/auth handles password hashing and session management automatically
+- Client-side validation should mirror server expectations for better UX
+- The "flow" hidden field with value "signUp" is essential for password provider to know it's a registration vs login
+
+---

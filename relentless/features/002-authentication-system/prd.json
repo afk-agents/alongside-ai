@@ -1,0 +1,140 @@
+{
+  "project": "Tasks: Authentication System",
+  "branchName": "ralph/002-tasks-authentication-system",
+  "description": "",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "New User Registration",
+      "description": "",
+      "acceptanceCriteria": [
+        "User can navigate to /signup page",
+        "Form validates email format before submission",
+        "Form validates password minimum length (8 chars)",
+        "Successful signup creates user account",
+        "Successful signup auto-creates profile with role=\"guest\"",
+        "User is automatically logged in after signup",
+        "User is redirected to homepage after signup",
+        "Duplicate email shows appropriate error message",
+        "Typecheck passes (`bunx tsc --noEmit`)",
+        "Lint passes (`bun run lint`)",
+        "T004 [P] [US-001] Create `components/auth/SignupForm.tsx` with email/password inputs and client-side validation",
+        "T005 [US-001] Create `app/(auth)/signup/page.tsx` that renders SignupForm",
+        "T006 [US-001] Add form validation: email format check, password minimum 8 characters",
+        "T007 [US-001] Handle signup errors: display \"An account with this email already exists\" for duplicates",
+        "T008 [US-001] Redirect to homepage on successful signup",
+        "T009 [US-001] Verify profile auto-created with role=\"guest\" and profileStatus=\"locked\""
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Completed with Phase 1 setup (T001-T003) and US-001 tasks (T004-T009)",
+      "phase": "Stories"
+    },
+    {
+      "id": "US-002",
+      "title": "User Login",
+      "description": "",
+      "acceptanceCriteria": [
+        "User can navigate to /login page",
+        "Successful login authenticates user",
+        "User is redirected to homepage after login",
+        "Invalid credentials show \"Invalid email or password\" (not specific error)",
+        "Already logged-in users are redirected away from /login",
+        "Typecheck passes",
+        "Lint passes",
+        "T010 [P] [US-002] Create `components/auth/LoginForm.tsx` with email/password inputs",
+        "T011 [US-002] Create `app/(auth)/login/page.tsx` that renders LoginForm",
+        "T012 [US-002] Handle login errors: display generic \"Invalid email or password\" message",
+        "T013 [US-002] Redirect to homepage on successful login",
+        "T014 [US-002] Redirect authenticated users away from /login to homepage"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "phase": "Stories"
+    },
+    {
+      "id": "US-003",
+      "title": "User Logout",
+      "description": "",
+      "acceptanceCriteria": [
+        "Logout button visible when user is authenticated",
+        "Logout button not visible when user is not authenticated",
+        "Clicking logout terminates the session",
+        "User is redirected to homepage after logout",
+        "Typecheck passes",
+        "Lint passes",
+        "T015 [P] [US-003] Create `components/auth/SignOutButton.tsx` component",
+        "T016 [US-003] Add SignOutButton to app layout (visible when authenticated)",
+        "T017 [US-003] Redirect to homepage after logout"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "phase": "Stories"
+    },
+    {
+      "id": "US-004",
+      "title": "Session Persistence",
+      "description": "",
+      "acceptanceCriteria": [
+        "Logged-in user remains logged in after browser restart",
+        "Session token stored in HTTP-only cookie",
+        "Expired sessions require re-authentication",
+        "Typecheck passes",
+        "Lint passes",
+        "T018 [US-004] Verify ConvexAuthNextjsProvider handles session persistence via cookies",
+        "T019 [US-004] Test session persistence across browser close/reopen",
+        "T020 [US-004] Verify session expiration works as expected (default @convex-dev/auth behavior)"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "phase": "Stories"
+    },
+    {
+      "id": "US-005",
+      "title": "Role-Based Access Control",
+      "description": "",
+      "acceptanceCriteria": [
+        "Unauthenticated users redirected to /login when accessing protected routes",
+        "Users with role=\"guest\" cannot access member-only routes",
+        "Users with role=\"member\" cannot access admin routes",
+        "Users with role=\"admin\" can access admin routes",
+        "Server-side role checking available via helper functions",
+        "Typecheck passes",
+        "Lint passes",
+        "T021 [P] [US-005] Create `middleware.ts` with route protection logic",
+        "T022 [US-005] Add helper function `requireAuth` in `convex/users.ts` for server-side auth checks",
+        "T023 [US-005] Add helper function `requireRole` in `convex/users.ts` for role-based access",
+        "T024 [US-005] Configure middleware to redirect unauthenticated users to /login for protected routes",
+        "T025 [US-005] Configure middleware to show 403 for unauthorized role access"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "",
+      "phase": "Stories"
+    },
+    {
+      "id": "US-006",
+      "title": "Auto-Create Account on Purchase (DEFERRED)",
+      "description": "- **Phase 1 (Setup)**: No dependencies - start immediately, BLOCKS all stories - **Phase 2 (US-001 to US-005)**: Depend on Phase 1 completion - **US-006**: DEFERRED to F11 - **Phase 3 (Polish)**: Depends on all active user stories ``` Phase 1 (Setup) ├── US-001 (Registration) ──┐ ├── US-002 (Login) ─────────┼── Phase 3 (Polish) ├── US-003 (Logout) ────────┤ ├── US-004 (Session) ───────┤ └── US-005 (RBAC) ──────────┘ ``` Within Phase 1: - T001 and T002 can run in parallel - T003 depends on T002 (uses users.ts types) Within User Stories: - US-001, US-002, US-003, US-004, US-005 can all run in parallel after Phase 1 - Component tasks (T004, T010, T015) can run in parallel | Phase | User Story | Tasks | Priority | |-------|------------|-------|----------| | 1 | Setup | T001-T003 | - | | 2 | US-001: Registration | T004-T009 | P1 | | 2 | US-002: Login | T010-T014 | P1 | | 2 | US-003: Logout | T015-T017 | P2 | | 2 | US-004: Session | T018-T020 | P2 | | 2 | US-005: RBAC | T021-T025 | P2 | | 2 | US-006: Auto-Create | DEFERRED | P3 | | 3 | Polish | T028-T032 | - |",
+      "acceptanceCriteria": [
+        "Guest checkout creates user account with provided email",
+        "Existing users are not duplicated",
+        "New users have profile with role=\"guest\"",
+        "T026 [US-006] Create internal mutation `createUserFromPurchase` in `convex/users.ts`",
+        "T027 [US-006] Integrate with event purchase flow (F11)",
+        "T028 [P] Add auth state indicator to layout (show user email or login link)",
+        "T029 [P] Add \"Sign up instead\" / \"Sign in instead\" links between auth pages",
+        "T030 Verify all auth flows work end-to-end",
+        "T031 Run full typecheck and lint",
+        "T032 Manual testing of all acceptance scenarios"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "",
+      "phase": "Stories"
+    }
+  ]
+}

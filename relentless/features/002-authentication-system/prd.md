@@ -15,9 +15,9 @@
 
 **Purpose**: Project configuration and provider setup - BLOCKS all user stories
 
-- [x] T001 [P] Update `app/ConvexClientProvider.tsx` to use `ConvexAuthNextjsProvider` from `@convex-dev/auth/nextjs`
-- [x] T002 [P] Create `convex/users.ts` with `getCurrentUser` and `getCurrentUserProfile` query functions
-- [x] T003 Update `convex/auth.ts` to add `afterUserCreatedOrUpdated` callback for auto-creating profile on registration
+- [ ] T001 [P] Update `app/ConvexClientProvider.tsx` to use `ConvexAuthNextjsProvider` from `@convex-dev/auth/nextjs`
+- [ ] T002 [P] Create `convex/users.ts` with `getCurrentUser` and `getCurrentUserProfile` query functions
+- [ ] T003 Update `convex/auth.ts` to add `afterUserCreatedOrUpdated` callback for auto-creating profile on registration
 
 **Checkpoint**: Auth infrastructure ready - user story implementation can begin
 
@@ -30,29 +30,29 @@
 **Description**: As a visitor, I want to create an account with email/password so that I can access the platform.
 
 **Acceptance Criteria:**
-- [x] User can navigate to /signup page
-- [x] Form validates email format before submission
-- [x] Form validates password minimum length (8 chars)
-- [x] Successful signup creates user account
-- [x] Successful signup auto-creates profile with role="guest"
-- [x] User is automatically logged in after signup
-- [x] User is redirected to homepage after signup
-- [x] Duplicate email shows appropriate error message
-- [x] Typecheck passes (`bunx tsc --noEmit`)
-- [x] Lint passes (`bun run lint`)
+- [ ] User can navigate to /signup page
+- [ ] Form validates email format before submission
+- [ ] Form validates password minimum length (8 chars)
+- [ ] Successful signup creates user account
+- [ ] Successful signup auto-creates profile with role="guest"
+- [ ] User is automatically logged in after signup
+- [ ] User is redirected to homepage after signup
+- [ ] Duplicate email shows appropriate error message
+- [ ] Typecheck passes (`bunx tsc --noEmit`)
+- [ ] Lint passes (`bun run lint`)
 
 **Dependencies:** None
 **Phase:** Stories
 **Priority:** P1
-**Status:** complete
+**Status:** pending
 
 **Implementation Tasks:**
-- [x] T004 [P] [US-001] Create `components/auth/SignupForm.tsx` with email/password inputs and client-side validation
-- [x] T005 [US-001] Create `app/(auth)/signup/page.tsx` that renders SignupForm
-- [x] T006 [US-001] Add form validation: email format check, password minimum 8 characters
-- [x] T007 [US-001] Handle signup errors: display "An account with this email already exists" for duplicates
-- [x] T008 [US-001] Redirect to homepage on successful signup
-- [x] T009 [US-001] Verify profile auto-created with role="guest" and profileStatus="locked"
+- [ ] T004 [P] [US-001] Create `components/auth/SignupForm.tsx` with email/password inputs and client-side validation
+- [ ] T005 [US-001] Create `app/(auth)/signup/page.tsx` that renders SignupForm
+- [ ] T006 [US-001] Add form validation: email format check, password minimum 8 characters
+- [ ] T007 [US-001] Handle signup errors: display "An account with this email already exists" for duplicates
+- [ ] T008 [US-001] Redirect to homepage on successful signup
+- [ ] T009 [US-001] Verify profile auto-created with role="guest" and profileStatus="locked"
 
 ---
 
