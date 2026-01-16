@@ -112,21 +112,21 @@
 **Description**: As a user, I want my session to persist across browser restarts so that I don't have to log in repeatedly.
 
 **Acceptance Criteria:**
-- [ ] Logged-in user remains logged in after browser restart
-- [ ] Session token stored in HTTP-only cookie
-- [ ] Expired sessions require re-authentication
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] Logged-in user remains logged in after browser restart
+- [x] Session token stored in HTTP-only cookie
+- [x] Expired sessions require re-authentication
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** None
 **Phase:** Stories
 **Priority:** P2
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T018 [US-004] Verify ConvexAuthNextjsProvider handles session persistence via cookies
-- [ ] T019 [US-004] Test session persistence across browser close/reopen
-- [ ] T020 [US-004] Verify session expiration works as expected (default @convex-dev/auth behavior)
+- [x] T018 [US-004] Verify ConvexAuthNextjsProvider handles session persistence via cookies
+- [x] T019 [US-004] Test session persistence across browser close/reopen
+- [x] T020 [US-004] Verify session expiration works as expected (default @convex-dev/auth behavior)
 
 ---
 

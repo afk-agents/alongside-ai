@@ -1,8 +1,8 @@
 ---
 feature: unknown
 started: '2026-01-16T21:35:32.249Z'
-last_updated: '2026-01-16T21:45:00.000Z'
-stories_completed: 3
+last_updated: '2026-01-16T22:30:00.000Z'
+stories_completed: 4
 patterns: []
 ---
 ## 2026-01-16 - US-001 (New User Registration)
@@ -77,5 +77,25 @@ patterns: []
 - useConvexAuth hook provides isAuthenticated and isLoading states for conditional rendering
 - Loading state placeholder prevents layout shift while auth status is being determined
 - ESLint enforces using Next.js Link component instead of native anchor tags for internal navigation
+
+---
+
+## 2026-01-16 - US-004 (Session Persistence)
+
+**Implemented:**
+- Created middleware.ts with convexAuthNextjsMiddleware for session cookie persistence
+- Configured cookieConfig.maxAge to 30 days to enable browser restart persistence
+- Verified ConvexAuthNextjsProvider handles session tokens via HTTP-only cookies
+- Verified session expiration uses @convex-dev/auth defaults (30 days total/inactive duration)
+
+**Files Changed:**
+- middleware.ts (new - Convex Auth middleware with 30-day cookie persistence)
+
+**Learnings:**
+- Without middleware cookieConfig.maxAge, auth cookies are session cookies that clear when browser closes
+- @convex-dev/auth automatically handles HTTP-only cookies for security
+- Session expiration is configurable via session.totalDurationMs and session.inactiveDurationMs in convexAuth config
+- Default session duration is 30 days for both total and inactive duration
+- The middleware also prepares infrastructure for US-005 route protection
 
 ---

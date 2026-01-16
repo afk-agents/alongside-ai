@@ -23,9 +23,9 @@
 
 ## Frontend: Auth Provider
 
-- [ ] CHK-012 [US4] `ConvexClientProvider.tsx` uses `ConvexAuthNextjsProvider`
-- [ ] CHK-013 [US4] Provider correctly initializes `ConvexReactClient`
-- [ ] CHK-014 [US4] Session persistence works via HTTP-only cookies
+- [x] CHK-012 [US4] `ConvexClientProvider.tsx` uses `ConvexAuthNextjsProvider`
+- [x] CHK-013 [US4] Provider correctly initializes `ConvexReactClient`
+- [x] CHK-014 [US4] Session persistence works via HTTP-only cookies
 - [x] CHK-015 [US2] `useAuthActions` hook available for signIn/signOut
 
 ## Frontend: Signup Flow (US1)
@@ -59,7 +59,7 @@
 
 ## Middleware & Route Protection (US5)
 
-- [ ] CHK-036 [US5] `middleware.ts` uses `convexAuthNextjsMiddleware`
+- [x] CHK-036 [US5] `middleware.ts` uses `convexAuthNextjsMiddleware`
 - [ ] CHK-037 [US5] Protected routes redirect unauthenticated users to /login
 - [ ] CHK-038 [US5] Auth pages (/login, /signup) redirect authenticated users to /
 - [ ] CHK-039 [US5] Admin routes return 403 for non-admin users
@@ -67,9 +67,9 @@
 
 ## Session Persistence (US4)
 
-- [ ] CHK-041 [US4] Session survives browser close and reopen
-- [ ] CHK-042 [US4] Expired sessions require re-authentication
-- [ ] CHK-043 [US4] Session token stored in HTTP-only cookie (not localStorage)
+- [x] CHK-041 [US4] Session survives browser close and reopen
+- [x] CHK-042 [US4] Expired sessions require re-authentication
+- [x] CHK-043 [US4] Session token stored in HTTP-only cookie (not localStorage)
 
 ## Security
 

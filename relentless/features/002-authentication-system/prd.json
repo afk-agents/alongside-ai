@@ -88,8 +88,8 @@
         "T020 [US-004] Verify session expiration works as expected (default @convex-dev/auth behavior)"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Completed - middleware.ts created with cookieConfig.maxAge for 30-day persistent cookies. Session persistence handled by ConvexAuthNextjsProvider with HTTP-only cookies. Session expiration uses @convex-dev/auth defaults (30 days).",
       "phase": "Stories"
     },
     {
