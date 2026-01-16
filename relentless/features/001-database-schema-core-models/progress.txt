@@ -2,7 +2,7 @@
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
 last_updated: '2026-01-16T21:22:00.000Z'
-stories_completed: 5
+stories_completed: 6
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -133,5 +133,33 @@ patterns: []
 - authorId is a required foreign key using v.id("profiles") validator (not optional, unlike speakerIds on events)
 - isPublished is required (v.boolean()) to enforce explicit draft/published state
 - youtubeEmbeds stores YouTube video IDs as string array for embedding support
+
+---
+
+## 2026-01-16 - US-006: Experiments Table
+
+**Implemented:**
+- Defined `experiments` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, authorId (v.id("profiles")), isPublished (v.boolean()), status
+- Status union validator: `exploring`, `prototyping`, `paused`, `concluded`
+- Optional fields: heroImageUrl, heroVideoUrl, learningLog, figuringOut, demoUrl, repoUrl, youtubeEmbeds (v.array(v.string())), tags (v.array(v.id("tags"))), isFeatured
+- Created 4 indexes: `by_slug` (URL routing), `by_authorId` (author's experiments), `by_status` (filter by experiment status), `by_isPublished` (public experiments filter)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added experiments table with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-006 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked experiment validation items as verified
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 4 new indexes)
+
+**Learnings:**
+- Experiments table follows the same pattern as projects but adds status tracking for in-progress work
+- The `status` field uses a union validator with 4 states to track experiment lifecycle
+- `learningLog` and `figuringOut` are optional string fields for documenting progress and challenges
+- Index `by_status` enables filtering experiments by their current state (exploring, prototyping, etc.)
 
 ---

@@ -107,4 +107,35 @@ export default defineSchema({
     .index("by_authorId", ["authorId"]) // Author's projects
     .index("by_isPublished", ["isPublished"]) // Public projects only
     .index("by_isFeatured", ["isFeatured"]), // Featured projects
+
+  // Experiments - in-progress work with status tracking
+  experiments: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+    description: v.string(), // Short description
+    authorId: v.id("profiles"), // Author profile reference
+    isPublished: v.boolean(), // Draft/published state
+    status: v.union(
+      v.literal("exploring"), // Initial exploration phase
+      v.literal("prototyping"), // Building prototypes
+      v.literal("paused"), // Work temporarily paused
+      v.literal("concluded") // Experiment completed
+    ),
+
+    // Optional fields
+    heroImageUrl: v.optional(v.string()), // Hero image URL
+    heroVideoUrl: v.optional(v.string()), // Hero video URL
+    learningLog: v.optional(v.string()), // Progress updates and learnings
+    figuringOut: v.optional(v.string()), // Current challenges being worked on
+    demoUrl: v.optional(v.string()), // Live demo link
+    repoUrl: v.optional(v.string()), // Repository link
+    youtubeEmbeds: v.optional(v.array(v.string())), // YouTube video IDs
+    tags: v.optional(v.array(v.id("tags"))), // Category tags
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+  })
+    .index("by_slug", ["slug"]) // URL routing
+    .index("by_authorId", ["authorId"]) // Author's experiments
+    .index("by_status", ["status"]) // Filter by experiment status
+    .index("by_isPublished", ["isPublished"]), // Public experiments only
 });

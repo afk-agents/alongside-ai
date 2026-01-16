@@ -184,16 +184,16 @@
 **Description**: As an admin, I want an experiments schema so that I can share in-progress work.
 
 **Acceptance Criteria:**
-- [ ] `experiments` table defined with all required fields
-- [ ] `status` union validator: `exploring`, `prototyping`, `paused`, `concluded`
-- [ ] `learningLog` and `figuringOut` optional fields
-- [ ] Indexes: `by_slug`, `by_authorId`, `by_status`, `by_isPublished`
-- [ ] TypeScript compiles without errors
+- [x] `experiments` table defined with all required fields
+- [x] `status` union validator: `exploring`, `prototyping`, `paused`, `concluded`
+- [x] `learningLog` and `figuringOut` optional fields
+- [x] Indexes: `by_slug`, `by_authorId`, `by_status`, `by_isPublished`
+- [x] TypeScript compiles without errors
 
 **Dependencies:** US-001 (profiles), US-002 (tags)
 **Phase:** Stories
 **Priority:** P2
-**Parallel:** Yes (with US-005, US-007, US-008)
+**Status:** COMPLETE
 
 ### US-007: Articles Table
 
@@ -233,8 +233,8 @@
 
 - [x] T021 [P] [US-005] Add `projects` table definition in `convex/schema.ts`
 - [x] T022 [P] [US-005] Add indexes for `projects` table
-- [ ] T023 [P] [US-006] Add `experiments` table definition in `convex/schema.ts`
-- [ ] T024 [P] [US-006] Add indexes for `experiments` table
+- [x] T023 [P] [US-006] Add `experiments` table definition in `convex/schema.ts`
+- [x] T024 [P] [US-006] Add indexes for `experiments` table
 - [ ] T025 [P] [US-007] Add `articles` table definition in `convex/schema.ts`
 - [ ] T026 [P] [US-007] Add indexes for `articles` table
 - [ ] T027 [P] [US-008] Add `playlists` table definition in `convex/schema.ts`

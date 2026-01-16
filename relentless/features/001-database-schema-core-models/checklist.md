@@ -12,7 +12,7 @@
 - [x] CHK-002 [US-002] `tags` table exists in `convex/schema.ts`
 - [x] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
 - [x] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
-- [ ] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
+- [x] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
 - [ ] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
 - [ ] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
 - [ ] CHK-008 [US-008] `playlists` table exists in `convex/schema.ts`
@@ -60,9 +60,9 @@
 
 ### Experiments
 
-- [ ] CHK-033 [US-006] `status` uses correct union: `v.union(v.literal("exploring"), v.literal("prototyping"), v.literal("paused"), v.literal("concluded"))`
-- [ ] CHK-034 [US-006] `learningLog` and `figuringOut` fields present (optional strings)
-- [ ] CHK-035 [US-006] Index `by_status` defined on `["status"]`
+- [x] CHK-033 [US-006] `status` uses correct union: `v.union(v.literal("exploring"), v.literal("prototyping"), v.literal("paused"), v.literal("concluded"))`
+- [x] CHK-034 [US-006] `learningLog` and `figuringOut` fields present (optional strings)
+- [x] CHK-035 [US-006] Index `by_status` defined on `["status"]`
 
 ### Articles
 
@@ -111,7 +111,7 @@
 - [x] CHK-060 [US-003] events.tags references `tags` table correctly
 - [x] CHK-061 [US-005] projects.authorId references `profiles` table correctly
 - [x] CHK-062 [US-005] projects.tags references `tags` table correctly
-- [ ] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
+- [x] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
 - [ ] CHK-064 [US-007] articles.authorId references `profiles` table correctly
 - [ ] CHK-065 [US-008] videos.authorId references `profiles` table correctly
 - [ ] CHK-066 [US-008] videos.playlistId references `playlists` table correctly
