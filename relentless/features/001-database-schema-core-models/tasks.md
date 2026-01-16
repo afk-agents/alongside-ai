@@ -54,24 +54,25 @@
 **Description**: As a developer, I need the tags table defined so that content can reference tags.
 
 **Acceptance Criteria:**
-- [ ] `tags` table defined in `convex/schema.ts`
-- [ ] Required fields: `name`, `slug`
-- [ ] Optional field: `description`
-- [ ] Indexes defined: `by_slug`, `by_name`
-- [ ] TypeScript compiles without errors
+- [x] `tags` table defined in `convex/schema.ts`
+- [x] Required fields: `name`, `slug`
+- [x] Optional field: `description`
+- [x] Indexes defined: `by_slug`, `by_name`
+- [x] TypeScript compiles without errors
 
 **Dependencies:** None
 **Phase:** Foundation
 **Priority:** P0 (Blocking)
+**Status:** COMPLETE
 
 ### Implementation Tasks - Foundation
 
 - [x] T004 [US-001] Remove placeholder `numbers` table from `convex/schema.ts`
 - [x] T005 [US-001] Add `profiles` table definition with all fields in `convex/schema.ts`
 - [x] T006 [US-001] Add indexes for `profiles` table: `by_userId`, `by_role`, `by_profileStatus`
-- [ ] T007 [US-002] Add `tags` table definition with all fields in `convex/schema.ts`
-- [ ] T008 [US-002] Add indexes for `tags` table: `by_slug`, `by_name`
-- [ ] T009 Run `bunx convex dev` to validate schema deploys correctly
+- [x] T007 [US-002] Add `tags` table definition with all fields in `convex/schema.ts`
+- [x] T008 [US-002] Add indexes for `tags` table: `by_slug`, `by_name`
+- [x] T009 Run `bunx convex dev` to validate schema deploys correctly
 - [x] T010 Run `bunx tsc --noEmit` to verify TypeScript compilation
 
 **Checkpoint**: Foundation tables ready - content tables can now be added

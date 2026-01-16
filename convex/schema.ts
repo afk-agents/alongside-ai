@@ -46,4 +46,16 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_role", ["role"])
     .index("by_profileStatus", ["profileStatus"]),
+
+  // Unified taxonomy for cross-content discovery
+  tags: defineTable({
+    // Required fields
+    name: v.string(), // Display name (e.g., "LangChain")
+    slug: v.string(), // URL-friendly identifier
+
+    // Optional fields
+    description: v.optional(v.string()),
+  })
+    .index("by_slug", ["slug"]) // URL routing, tag pages
+    .index("by_name", ["name"]), // Lookup by name
 });

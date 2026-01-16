@@ -9,7 +9,7 @@
 ## Schema Structure & Tables
 
 - [x] CHK-001 [US-001] `profiles` table exists in `convex/schema.ts`
-- [ ] CHK-002 [US-002] `tags` table exists in `convex/schema.ts`
+- [x] CHK-002 [US-002] `tags` table exists in `convex/schema.ts`
 - [ ] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
 - [ ] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
 - [ ] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
@@ -84,10 +84,10 @@
 
 ## Tags Table Validation
 
-- [ ] CHK-046 [US-002] `name` is required string
-- [ ] CHK-047 [US-002] `slug` is required string
-- [ ] CHK-048 [US-002] Index `by_slug` defined for URL lookups
-- [ ] CHK-049 [US-002] Index `by_name` defined for name lookups
+- [x] CHK-046 [US-002] `name` is required string
+- [x] CHK-047 [US-002] `slug` is required string
+- [x] CHK-048 [US-002] Index `by_slug` defined for URL lookups
+- [x] CHK-049 [US-002] Index `by_name` defined for name lookups
 - [ ] CHK-050 [Gap] Consider case-insensitive index for tag name searches
 
 ---
@@ -141,7 +141,7 @@
 
 ## Deployment & Quality Gates
 
-- [ ] CHK-078 [Constitution] `bunx convex dev` deploys schema without errors
+- [x] CHK-078 [Constitution] `bunx convex dev` deploys schema without errors
 - [x] CHK-079 [Constitution] `bunx tsc --noEmit` passes with 0 errors
 - [x] CHK-080 [Constitution] `bun run lint` passes with 0 warnings
 - [x] CHK-081 [Constitution] `authTables` spread is preserved from @convex-dev/auth

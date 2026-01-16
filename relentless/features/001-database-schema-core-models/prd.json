@@ -19,7 +19,7 @@
         "TypeScript compiles without errors: `bunx tsc --noEmit`"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Blocking dependency - must complete before content tables",
       "phase": "Foundation"
     },
@@ -36,7 +36,7 @@
         "Schema deploys successfully: `bunx convex dev`"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Blocking dependency - must complete before content tables",
       "phase": "Foundation"
     },

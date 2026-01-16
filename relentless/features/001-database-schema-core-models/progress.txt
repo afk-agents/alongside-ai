@@ -1,3 +1,10 @@
+---
+feature: Database Schema & Core Models
+started: '2026-01-16T20:13:02.894Z'
+last_updated: '2026-01-16T22:15:00.000Z'
+stories_completed: 2
+patterns: []
+---
 # Progress Log: Database Schema & Core Models
 
 ## 2026-01-16 - US-001: Profiles Table
@@ -26,5 +33,28 @@
 - The existing schema had a placeholder `numbers` table with associated `myFunctions.ts` that needed removal
 - Generated Convex files in `convex/_generated` weren't ignored by ESLint, causing warnings
 - authTables from @convex-dev/auth must be spread first in the schema definition
+
+---
+
+## 2026-01-16 - US-002: Tags Table
+
+**Implemented:**
+- Defined `tags` table in `convex/schema.ts` with required fields: name, slug
+- Added optional `description` field
+- Created indexes: `by_slug` (URL routing), `by_name` (lookup by name)
+- Added documentation comments explaining table purpose
+
+**Files Changed:**
+- `convex/schema.ts` - Added tags table with indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully)
+
+**Learnings:**
+- Convex automatically appends `_creationTime` to index fields
+- Foundation tables (profiles, tags) must be complete before content tables can reference them
+- Tags table is simple but critical for cross-content discovery functionality
 
 ---
