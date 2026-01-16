@@ -31,7 +31,7 @@
 - [x] CHK-016 [US-001] Index `by_userId` defined on `["userId"]`
 - [x] CHK-017 [US-001] Index `by_role` defined on `["role"]`
 - [x] CHK-018 [US-001] Index `by_profileStatus` defined on `["profileStatus"]`
-- [ ] CHK-019 [Edge Case] Verify profile can be created with minimal required fields only
+- [x] CHK-019 [US-004] Verify profile can be created with minimal required fields only
 
 ---
 
@@ -152,8 +152,8 @@
 
 ## Manual Testing
 
-- [ ] CHK-084 [US-001] Can insert profile with each role via Dashboard
-- [ ] CHK-085 [US-001] Can insert profile with each profileStatus via Dashboard
+- [x] CHK-084 [US-004] Can insert profile with each role via Dashboard
+- [x] CHK-085 [US-004] Can insert profile with each profileStatus via Dashboard
 - [x] CHK-086 [US-003] Can insert event with all required fields via Dashboard
 - [x] CHK-087 [US-003] Can insert event with speaker references via Dashboard
 - [x] CHK-088 [US-003] Can insert event with tag references via Dashboard

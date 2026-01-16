@@ -1,8 +1,8 @@
 ---
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
-last_updated: '2026-01-16T21:16:10.000Z'
-stories_completed: 3
+last_updated: '2026-01-16T21:45:00.000Z'
+stories_completed: 4
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -81,5 +81,32 @@ patterns: []
 - speakerIds and tags are arrays of foreign key IDs using v.id() validator
 - priceInCents uses v.number() for integer storage (avoiding floating-point currency issues)
 - Compound index `by_isFeatured_and_date` enables efficient queries for featured events sorted chronologically
+
+---
+
+## 2026-01-16 - US-004: Profile Role System Validation
+
+**Implemented:**
+- Verified `profiles` table has correct role union validator: `admin`, `member`, `guest`
+- Verified `profiles` table has correct profileStatus union validator: `locked`, `unlocked`, `published`
+- Verified `by_role` index exists for querying profiles by role
+- Verified `by_profileStatus` index exists for querying profiles by status
+- Verified `socialLinks` nested object supports all required fields: linkedin, twitter, github, website
+- Verified `skills` field uses `v.optional(v.array(v.string()))`
+- All quality checks pass (TypeScript, ESLint)
+
+**Files Changed:**
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-004 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked profile validation items as verified
+- `relentless/features/001-database-schema-core-models/progress.txt` - Added this progress entry
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+
+**Learnings:**
+- US-004 is a validation story, not an implementation story - the profiles table was fully implemented in US-001
+- Profile role system validation confirms schema supports role-based access control patterns
+- The foundation work from US-001 already satisfied all US-004 acceptance criteria
 
 ---

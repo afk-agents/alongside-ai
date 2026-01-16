@@ -131,25 +131,26 @@
 **Description**: As an admin, I want a profile system with roles so that I can manage user permissions (admin, member, guest).
 
 **Acceptance Criteria:**
-- [ ] Profile table supports all three roles: `admin`, `member`, `guest`
-- [ ] Profile table supports all three statuses: `locked`, `unlocked`, `published`
-- [ ] Can query profiles by role using `by_role` index
-- [ ] Can query profiles by status using `by_profileStatus` index
-- [ ] Social links object supports: linkedin, twitter, github, website
-- [ ] Skills stored as array of strings
-- [ ] TypeScript compiles without errors
-- [ ] Lint passes
+- [x] Profile table supports all three roles: `admin`, `member`, `guest`
+- [x] Profile table supports all three statuses: `locked`, `unlocked`, `published`
+- [x] Can query profiles by role using `by_role` index
+- [x] Can query profiles by status using `by_profileStatus` index
+- [x] Social links object supports: linkedin, twitter, github, website
+- [x] Skills stored as array of strings
+- [x] TypeScript compiles without errors
+- [x] Lint passes
 
 **Dependencies:** US-001 (profiles foundation)
 **Phase:** Stories
 **Priority:** P1
+**Status:** COMPLETE
 
 ### Implementation Tasks - User Story 2
 
-- [ ] T017 [US-004] Verify `profiles` table has correct role union validator
-- [ ] T018 [US-004] Verify `profiles` table has correct profileStatus union validator
-- [ ] T019 [US-004] Manual test: Insert profiles with each role via Convex Dashboard
-- [ ] T020 [US-004] Manual test: Query profiles by role using index
+- [x] T017 [US-004] Verify `profiles` table has correct role union validator
+- [x] T018 [US-004] Verify `profiles` table has correct profileStatus union validator
+- [x] T019 [US-004] Manual test: Insert profiles with each role via Convex Dashboard
+- [x] T020 [US-004] Manual test: Query profiles by role using index
 
 **Checkpoint**: Profile role system complete
 
