@@ -24,7 +24,7 @@
         "T004 [US-001] Add test scripts to package.json"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "phase": "Setup"
     },
