@@ -1,8 +1,8 @@
 ---
 feature: unknown
 started: '2026-01-16T21:35:32.249Z'
-last_updated: '2026-01-16T21:35:32.251Z'
-stories_completed: 2
+last_updated: '2026-01-16T21:45:00.000Z'
+stories_completed: 3
 patterns: []
 ---
 ## 2026-01-16 - US-001 (New User Registration)
@@ -54,5 +54,28 @@ patterns: []
 - useConvexAuth hook provides isAuthenticated and isLoading states for auth-aware redirects
 - Generic error messages are important for security - don't reveal whether an email exists in the system
 - Client-side auth redirect in useEffect prevents flash of login form for already authenticated users
+
+---
+
+## 2026-01-16 - US-003 (User Logout)
+
+**Implemented:**
+- Created components/auth/SignOutButton.tsx component
+- Created components/auth/AuthNav.tsx for conditional auth navigation
+- Added SignOutButton to app layout via AuthNav component
+- SignOutButton calls signOut() and redirects to homepage
+- AuthNav shows "Sign out" button when authenticated, "Sign in" link when not
+- Added loading state placeholder while checking auth status
+
+**Files Changed:**
+- components/auth/SignOutButton.tsx (new - logout button component)
+- components/auth/AuthNav.tsx (new - auth navigation with conditional visibility)
+- app/layout.tsx (updated - added header with AuthNav and site logo)
+
+**Learnings:**
+- Since layout.tsx is a server component, client-side auth state must be handled in a separate client component (AuthNav)
+- useConvexAuth hook provides isAuthenticated and isLoading states for conditional rendering
+- Loading state placeholder prevents layout shift while auth status is being determined
+- ESLint enforces using Next.js Link component instead of native anchor tags for internal navigation
 
 ---

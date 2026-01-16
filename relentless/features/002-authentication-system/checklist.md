@@ -52,10 +52,10 @@
 
 ## Frontend: Logout Flow (US3)
 
-- [ ] CHK-032 [US3] SignOutButton component calls `signOut()` on click
-- [ ] CHK-033 [US3] Logout redirects to homepage
-- [ ] CHK-034 [US3] SignOutButton only visible when user is authenticated
-- [ ] CHK-035 [US3] Login link visible when user is not authenticated
+- [x] CHK-032 [US3] SignOutButton component calls `signOut()` on click
+- [x] CHK-033 [US3] Logout redirects to homepage
+- [x] CHK-034 [US3] SignOutButton only visible when user is authenticated
+- [x] CHK-035 [US3] Login link visible when user is not authenticated
 
 ## Middleware & Route Protection (US5)
 

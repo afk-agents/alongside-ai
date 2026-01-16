@@ -69,8 +69,8 @@
         "T017 [US-003] Redirect to homepage after logout"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Completed - SignOutButton.tsx and AuthNav.tsx created with conditional visibility based on auth state",
       "phase": "Stories"
     },
     {

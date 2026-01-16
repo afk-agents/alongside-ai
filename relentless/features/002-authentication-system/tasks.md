@@ -88,22 +88,22 @@
 **Description**: As an authenticated user, I want to sign out so that I can end my session securely.
 
 **Acceptance Criteria:**
-- [ ] Logout button visible when user is authenticated
-- [ ] Logout button not visible when user is not authenticated
-- [ ] Clicking logout terminates the session
-- [ ] User is redirected to homepage after logout
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] Logout button visible when user is authenticated
+- [x] Logout button not visible when user is not authenticated
+- [x] Clicking logout terminates the session
+- [x] User is redirected to homepage after logout
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** None
 **Phase:** Stories
 **Priority:** P2
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T015 [P] [US-003] Create `components/auth/SignOutButton.tsx` component
-- [ ] T016 [US-003] Add SignOutButton to app layout (visible when authenticated)
-- [ ] T017 [US-003] Redirect to homepage after logout
+- [x] T015 [P] [US-003] Create `components/auth/SignOutButton.tsx` component
+- [x] T016 [US-003] Add SignOutButton to app layout (visible when authenticated)
+- [x] T017 [US-003] Redirect to homepage after logout
 
 ---
 
