@@ -12,7 +12,7 @@
 |-------|-------|----------|--------|--------------|
 | US-001 | Install Testing Dependencies | P1 | complete | None |
 | US-002 | Configure Vitest | P1 | complete | US-001 |
-| US-003 | Test Utility Functions | P1 | pending | US-002 |
+| US-003 | Test Utility Functions | P1 | complete | US-002 |
 | US-004 | Test React Components | P1 | pending | US-002 |
 | US-005 | Watch Mode for Development | P2 | pending | US-002 |
 | US-006 | Coverage Reporting | P3 | pending | US-002 |
@@ -86,27 +86,27 @@
 **Description:** As a developer, I want to write unit tests for utility functions so that I can verify non-UI code works correctly.
 
 **Acceptance Criteria:**
-- [ ] `__tests__/` directory structure exists
-- [ ] Sample utility function exists in `lib/example.ts`
-- [ ] Sample test exists in `__tests__/lib/example.test.ts`
-- [ ] Test imports utility using path alias `@/lib/example`
-- [ ] `bun test` runs the sample test and passes
-- [ ] Test uses describe/it/expect global API
-- [ ] Multiple test cases run independently
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] `__tests__/` directory structure exists
+- [x] Sample utility function exists in `lib/example.ts`
+- [x] Sample test exists in `__tests__/lib/example.test.ts`
+- [x] Test imports utility using path alias `@/lib/example`
+- [x] `bun test` runs the sample test and passes
+- [x] Test uses describe/it/expect global API
+- [x] Multiple test cases run independently
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** US-002
 **Phase:** Foundation
 **Priority:** P1
-**Status:** pending
+**Status:** complete
 **Parallel:** Yes (with US-004)
 
 **Implementation Tasks:**
-- [ ] T009 [US-003] Create `__tests__/` directory structure
-- [ ] T010 [US-003] Create sample utility function `lib/example.ts`
-- [ ] T011 [US-003] Create sample test `__tests__/lib/example.test.ts`
-- [ ] T012 [US-003] Verify test runs and passes with `bun test`
+- [x] T009 [US-003] Create `__tests__/` directory structure
+- [x] T010 [US-003] Create sample utility function `lib/example.ts`
+- [x] T011 [US-003] Create sample test `__tests__/lib/example.test.ts`
+- [x] T012 [US-003] Verify test runs and passes with `bun test`
 
 ---
 

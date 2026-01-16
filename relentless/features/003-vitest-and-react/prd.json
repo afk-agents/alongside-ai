@@ -75,7 +75,7 @@
         "T012 [US-003] Verify test runs and passes with `bun test`"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependencies": [
         "US-002"

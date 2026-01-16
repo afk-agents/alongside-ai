@@ -82,3 +82,31 @@ stories_completed: 0
 - Path alias config uses `path.resolve(__dirname, './')` for proper resolution
 
 ---
+
+## 2026-01-16 - US-003 Complete
+
+**Implemented:**
+- Created `__tests__/` directory structure (lib, setup/mocks, components/auth)
+- Created sample utility function `lib/example.ts` (formatDisplayName)
+- Created sample test `__tests__/lib/example.test.ts` with 5 test cases
+- Tests use describe/it/expect global API
+- Tests import using path alias `@/lib/example`
+
+**Files Changed:**
+- `lib/example.ts` - NEW: Sample utility function
+- `__tests__/lib/example.test.ts` - NEW: Sample utility tests
+
+**Test Results:**
+- 5 tests passing
+- All test cases run independently
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (5 tests)
+
+**Learnings:**
+- Vitest globals work correctly with tsconfig types configured
+- Path alias resolution working as expected in test files
+
+---
