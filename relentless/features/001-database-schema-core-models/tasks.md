@@ -200,17 +200,17 @@
 **Description**: As an admin, I want an articles schema so that I can publish blog content.
 
 **Acceptance Criteria:**
-- [ ] `articles` table defined with all required fields
-- [ ] `content` field for full article text
-- [ ] `publishedAt` timestamp field
-- [ ] `substackUrl` optional field for linking back
-- [ ] Indexes: `by_slug`, `by_authorId`, `by_publishedAt`, `by_isFeatured_and_publishedAt`
-- [ ] TypeScript compiles without errors
+- [x] `articles` table defined with all required fields
+- [x] `content` field for full article text
+- [x] `publishedAt` timestamp field
+- [x] `substackUrl` optional field for linking back
+- [x] Indexes: `by_slug`, `by_authorId`, `by_publishedAt`, `by_isFeatured_and_publishedAt`
+- [x] TypeScript compiles without errors
 
 **Dependencies:** US-001 (profiles), US-002 (tags)
 **Phase:** Stories
 **Priority:** P2
-**Parallel:** Yes (with US-005, US-006, US-008)
+**Status:** COMPLETE
 
 ### US-008: Videos & Playlists Tables
 
@@ -235,8 +235,8 @@
 - [x] T022 [P] [US-005] Add indexes for `projects` table
 - [x] T023 [P] [US-006] Add `experiments` table definition in `convex/schema.ts`
 - [x] T024 [P] [US-006] Add indexes for `experiments` table
-- [ ] T025 [P] [US-007] Add `articles` table definition in `convex/schema.ts`
-- [ ] T026 [P] [US-007] Add indexes for `articles` table
+- [x] T025 [P] [US-007] Add `articles` table definition in `convex/schema.ts`
+- [x] T026 [P] [US-007] Add indexes for `articles` table
 - [ ] T027 [P] [US-008] Add `playlists` table definition in `convex/schema.ts`
 - [ ] T028 [P] [US-008] Add `videos` table definition in `convex/schema.ts`
 - [ ] T029 [P] [US-008] Add indexes for `videos` and `playlists` tables

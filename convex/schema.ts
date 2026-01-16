@@ -138,4 +138,24 @@ export default defineSchema({
     .index("by_authorId", ["authorId"]) // Author's experiments
     .index("by_status", ["status"]) // Filter by experiment status
     .index("by_isPublished", ["isPublished"]), // Public experiments only
+
+  // Articles - blog content synced from Substack
+  articles: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+    content: v.string(), // Full article content (Markdown/HTML)
+    authorId: v.id("profiles"), // Author profile reference
+    publishedAt: v.number(), // Publication timestamp (Unix ms)
+
+    // Optional fields
+    excerpt: v.optional(v.string()), // Short preview text
+    tags: v.optional(v.array(v.id("tags"))), // Category tags
+    substackUrl: v.optional(v.string()), // Link back to Substack
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+  })
+    .index("by_slug", ["slug"]) // URL routing
+    .index("by_authorId", ["authorId"]) // Author's articles
+    .index("by_publishedAt", ["publishedAt"]) // Chronological listing
+    .index("by_isFeatured_and_publishedAt", ["isFeatured", "publishedAt"]), // Featured articles sorted by date
 });

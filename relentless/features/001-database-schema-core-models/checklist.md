@@ -13,7 +13,7 @@
 - [x] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
 - [x] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
 - [x] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
-- [ ] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
+- [x] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
 - [ ] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
 - [ ] CHK-008 [US-008] `playlists` table exists in `convex/schema.ts`
 - [ ] CHK-009 [US-009] `testimonials` table exists in `convex/schema.ts`
@@ -66,11 +66,11 @@
 
 ### Articles
 
-- [ ] CHK-036 [US-007] `content` field is required string (for full article text)
-- [ ] CHK-037 [US-007] `publishedAt` uses `v.number()` for Unix timestamp (required)
-- [ ] CHK-038 [US-007] `substackUrl` is optional string
-- [ ] CHK-039 [US-007] Index `by_publishedAt` defined for chronological queries
-- [ ] CHK-040 [US-007] Index `by_isFeatured_and_publishedAt` defined for featured content
+- [x] CHK-036 [US-007] `content` field is required string (for full article text)
+- [x] CHK-037 [US-007] `publishedAt` uses `v.number()` for Unix timestamp (required)
+- [x] CHK-038 [US-007] `substackUrl` is optional string
+- [x] CHK-039 [US-007] Index `by_publishedAt` defined for chronological queries
+- [x] CHK-040 [US-007] Index `by_isFeatured_and_publishedAt` defined for featured content
 
 ### Videos & Playlists
 
@@ -112,7 +112,7 @@
 - [x] CHK-061 [US-005] projects.authorId references `profiles` table correctly
 - [x] CHK-062 [US-005] projects.tags references `tags` table correctly
 - [x] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
-- [ ] CHK-064 [US-007] articles.authorId references `profiles` table correctly
+- [x] CHK-064 [US-007] articles.authorId references `profiles` table correctly
 - [ ] CHK-065 [US-008] videos.authorId references `profiles` table correctly
 - [ ] CHK-066 [US-008] videos.playlistId references `playlists` table correctly
 - [ ] CHK-067 [US-009] testimonials.eventId references `events` table correctly
