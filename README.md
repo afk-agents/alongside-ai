@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Alongside AI
 
-## Getting Started
+A community-driven platform for tech professionals evolving into sovereign creators, working alongside AI.
 
-First, run the development server:
+**Website:** alongs.ai
+
+## Documentation
+
+- [Master PRD](ai-docs/Alongside_AI-MASTER_PRD.md) - Full product requirements
+- [Feature List](ai-docs/Alongside_AI-FEATURE-LIST.md) - Detailed feature specifications
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, Tailwind CSS 4
+- **Backend:** Convex (real-time database + serverless functions)
+- **Auth:** @convex-dev/auth (Password provider)
+- **Payments:** Stripe Checkout
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install dependencies
+bun install
+
+# Run Next.js dev server
+bun run dev
+
+# Run Convex dev server (separate terminal)
+bunx convex dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Feature Roadmap
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Phase 1: MVP Launch
 
-## Learn More
+- [ ] F01: Database schema and core models
+- [ ] F02: Authentication system (email/password)
+- [ ] F03: App shell and navigation
+- [ ] F04: Tag system
+- [ ] F05: Founder profiles and About page
+- [ ] F06: Blog/Articles section
+- [ ] F07: Projects showcase (The Lab)
+- [ ] F08: Learn section (videos/resources)
+- [ ] F09: Event listing and detail pages
+- [ ] F10: Stripe Checkout integration
+- [ ] F11: Event registration flow
+- [ ] F12: Discount code system
+- [ ] F13: Post-purchase experience
+- [ ] F14: Homepage
+- [ ] F15: Site-wide search
+- [ ] F16: Testimonials
+- [ ] F17: Newsletter signup
+- [ ] F18: Admin dashboard shell
+- [ ] F19: Admin content management
+- [ ] F20: Admin event management
+- [ ] F21: Standard pages (Contact, Privacy, Terms, FAQ)
 
-To learn more about Next.js, take a look at the following resources:
+### Phase 2: Community Foundation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [ ] F22: Member profile system
+- [ ] F23: Profile unlock workflow
+- [ ] F24: Community directory
+- [ ] F25: Experiments section
+- [ ] F26: Admin user management
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Phase 3: Community Growth
 
-## Deploy on Vercel
+- [ ] F27: Community content submission
+- [ ] F28: Paid courses
+- [ ] F29: Membership tiers
+- [ ] F30: Event sponsorship display
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Phase 4: Platform Maturity
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] F31: Event cohort spaces
+- [ ] F32: Direct messaging
+- [ ] F33: Advanced analytics
