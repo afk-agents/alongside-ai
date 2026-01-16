@@ -35,7 +35,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ### Phase 1: MVP Launch
 
-- [ ] F01: Database schema and core models
+- [x] F01: Database schema and core models
 - [ ] F02: Authentication system (email/password)
 - [ ] F03: App shell and navigation
 - [ ] F04: Tag system
