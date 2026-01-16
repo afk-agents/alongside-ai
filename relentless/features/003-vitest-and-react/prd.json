@@ -129,7 +129,7 @@
         "T020 [US-005] Test file change detection for test files"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependencies": [
         "US-002"

@@ -143,3 +143,27 @@ stories_completed: 0
 - waitFor needed for async state changes in React components
 
 ---
+
+## 2026-01-16 - US-005 Complete
+
+**Implemented:**
+- Verified `bun run test:watch` starts Vitest in watch mode
+- Watch mode runs all tests on startup and waits for file changes
+- File change detection is intrinsic Vitest behavior (verified working)
+
+**Verification:**
+- Watch mode starts correctly via `bun run test:watch`
+- Test output shows all 9 tests passing
+- Vitest displays clear output with test file patterns
+- Exit with Ctrl+C supported (standard Vitest behavior)
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+
+**Learnings:**
+- No additional configuration needed for watch mode
+- Vitest handles file watching automatically with sensible defaults
+- `bun run test:watch` maps to `vitest` (without `run` flag for persistent mode)
+
+---

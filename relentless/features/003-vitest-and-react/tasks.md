@@ -14,7 +14,7 @@
 | US-002 | Configure Vitest | P1 | complete | US-001 |
 | US-003 | Test Utility Functions | P1 | complete | US-002 |
 | US-004 | Test React Components | P1 | complete | US-002 |
-| US-005 | Watch Mode for Development | P2 | pending | US-002 |
+| US-005 | Watch Mode for Development | P2 | complete | US-002 |
 | US-006 | Coverage Reporting | P3 | pending | US-002 |
 
 **Total Stories**: 6
@@ -146,22 +146,22 @@
 **Description:** As a developer, I want tests to re-run automatically when I change files so that I get immediate feedback during development.
 
 **Acceptance Criteria:**
-- [ ] `bun test:watch` starts Vitest in watch mode
-- [ ] Modifying a source file triggers relevant test re-run
-- [ ] Modifying a test file triggers that test file to re-run
-- [ ] Watch mode displays clear output on file changes
-- [ ] Watch mode can be exited cleanly (Ctrl+C)
-- [ ] Typecheck passes
+- [x] `bun test:watch` starts Vitest in watch mode
+- [x] Modifying a source file triggers relevant test re-run
+- [x] Modifying a test file triggers that test file to re-run
+- [x] Watch mode displays clear output on file changes
+- [x] Watch mode can be exited cleanly (Ctrl+C)
+- [x] Typecheck passes
 
 **Dependencies:** US-002
 **Phase:** Polish
 **Priority:** P2
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T018 [US-005] Verify `test:watch` script works correctly
-- [ ] T019 [US-005] Test file change detection for source files
-- [ ] T020 [US-005] Test file change detection for test files
+- [x] T018 [US-005] Verify `test:watch` script works correctly
+- [x] T019 [US-005] Test file change detection for source files
+- [x] T020 [US-005] Test file change detection for test files
 
 ---
 
