@@ -105,7 +105,7 @@
         "T017 [US-004] Verify component test runs and passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "",
       "dependencies": [
         "US-002"

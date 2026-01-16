@@ -110,3 +110,36 @@ stories_completed: 0
 - Path alias resolution working as expected in test files
 
 ---
+
+## 2026-01-16 - US-004 Complete
+
+**Implemented:**
+- Created custom test utilities `__tests__/setup/test-utils.tsx` with custom render
+- Created Convex mock utilities `__tests__/setup/mocks/convex.ts`
+- Created SignOutButton test `__tests__/components/auth/SignOutButton.test.tsx`
+- Tests mock Next.js router (useRouter, push)
+- Tests mock Convex auth hooks (useAuthActions, signOut)
+- Tests cover: render, click events, loading state, error handling
+
+**Files Changed:**
+- `__tests__/setup/test-utils.tsx` - NEW: Custom render with providers
+- `__tests__/setup/mocks/convex.ts` - NEW: Convex mock utilities
+- `__tests__/components/auth/SignOutButton.test.tsx` - NEW: Component tests
+
+**Test Results:**
+- 4 component tests passing
+- 9 total tests (5 utility + 4 component)
+- userEvent simulations working correctly
+- waitFor async assertions working
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (9 tests)
+
+**Learnings:**
+- vi.mock hoisting works correctly at module level
+- userEvent.setup() required for async user interactions
+- waitFor needed for async state changes in React components
+
+---

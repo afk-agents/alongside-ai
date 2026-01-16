@@ -13,7 +13,7 @@
 | US-001 | Install Testing Dependencies | P1 | complete | None |
 | US-002 | Configure Vitest | P1 | complete | US-001 |
 | US-003 | Test Utility Functions | P1 | complete | US-002 |
-| US-004 | Test React Components | P1 | pending | US-002 |
+| US-004 | Test React Components | P1 | complete | US-002 |
 | US-005 | Watch Mode for Development | P2 | pending | US-002 |
 | US-006 | Coverage Reporting | P3 | pending | US-002 |
 
@@ -115,29 +115,29 @@
 **Description:** As a developer, I want to write tests for React components so that I can verify UI behavior works correctly.
 
 **Acceptance Criteria:**
-- [ ] Custom test utilities exist in `__tests__/setup/test-utils.tsx`
-- [ ] Convex mock utilities exist in `__tests__/setup/mocks/convex.ts`
-- [ ] Sample component test exists for SignOutButton
-- [ ] Test renders component with React Testing Library
-- [ ] Test queries DOM elements (getByRole, getByText, etc.)
-- [ ] Test simulates user events (click) with userEvent
-- [ ] Test mocks Next.js router and Convex hooks
-- [ ] `bun test` runs component tests and passes
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] Custom test utilities exist in `__tests__/setup/test-utils.tsx`
+- [x] Convex mock utilities exist in `__tests__/setup/mocks/convex.ts`
+- [x] Sample component test exists for SignOutButton
+- [x] Test renders component with React Testing Library
+- [x] Test queries DOM elements (getByRole, getByText, etc.)
+- [x] Test simulates user events (click) with userEvent
+- [x] Test mocks Next.js router and Convex hooks
+- [x] `bun test` runs component tests and passes
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** US-002
 **Phase:** Foundation
 **Priority:** P1
-**Status:** pending
+**Status:** complete
 **Parallel:** Yes (with US-003)
 
 **Implementation Tasks:**
-- [ ] T013 [US-004] Create `__tests__/setup/test-utils.tsx` with custom render
-- [ ] T014 [US-004] Create `__tests__/setup/mocks/convex.ts` for Convex mocking
-- [ ] T015 [US-004] Create SignOutButton test in `__tests__/components/auth/`
-- [ ] T016 [US-004] Mock Next.js navigation and Convex auth hooks
-- [ ] T017 [US-004] Verify component test runs and passes
+- [x] T013 [US-004] Create `__tests__/setup/test-utils.tsx` with custom render
+- [x] T014 [US-004] Create `__tests__/setup/mocks/convex.ts` for Convex mocking
+- [x] T015 [US-004] Create SignOutButton test in `__tests__/components/auth/`
+- [x] T016 [US-004] Mock Next.js navigation and Convex auth hooks
+- [x] T017 [US-004] Verify component test runs and passes
 
 ---
 
