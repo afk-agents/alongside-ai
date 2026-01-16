@@ -10,7 +10,7 @@
 
 - [x] CHK-001 [US-001] `profiles` table exists in `convex/schema.ts`
 - [x] CHK-002 [US-002] `tags` table exists in `convex/schema.ts`
-- [ ] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
+- [x] CHK-003 [US-003] `events` table exists in `convex/schema.ts`
 - [ ] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
 - [ ] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
 - [ ] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
@@ -37,14 +37,14 @@
 
 ## Events Table Validation
 
-- [ ] CHK-020 [US-003] All required fields present: title, slug, description, date, timezone, location, isVirtual, priceInCents
-- [ ] CHK-021 [US-003] `date` uses `v.number()` for Unix timestamp
-- [ ] CHK-022 [US-003] `priceInCents` uses `v.number()` (not float)
-- [ ] CHK-023 [US-003] `speakerIds` uses `v.optional(v.array(v.id("profiles")))`
-- [ ] CHK-024 [US-003] `tags` uses `v.optional(v.array(v.id("tags")))`
-- [ ] CHK-025 [US-003] Index `by_slug` defined on `["slug"]`
-- [ ] CHK-026 [US-003] Index `by_date` defined on `["date"]`
-- [ ] CHK-027 [US-003] Index `by_isFeatured_and_date` defined on `["isFeatured", "date"]`
+- [x] CHK-020 [US-003] All required fields present: title, slug, description, date, timezone, location, isVirtual, priceInCents
+- [x] CHK-021 [US-003] `date` uses `v.number()` for Unix timestamp
+- [x] CHK-022 [US-003] `priceInCents` uses `v.number()` (not float)
+- [x] CHK-023 [US-003] `speakerIds` uses `v.optional(v.array(v.id("profiles")))`
+- [x] CHK-024 [US-003] `tags` uses `v.optional(v.array(v.id("tags")))`
+- [x] CHK-025 [US-003] Index `by_slug` defined on `["slug"]`
+- [x] CHK-026 [US-003] Index `by_date` defined on `["date"]`
+- [x] CHK-027 [US-003] Index `by_isFeatured_and_date` defined on `["isFeatured", "date"]`
 - [ ] CHK-028 [Gap] Consider adding `by_isArchived` index for filtering archived events
 
 ---
@@ -107,8 +107,8 @@
 ## Foreign Key References
 
 - [x] CHK-058 [US-001] profiles.userId references auth `users` table correctly
-- [ ] CHK-059 [US-003] events.speakerIds references `profiles` table correctly
-- [ ] CHK-060 [US-003] events.tags references `tags` table correctly
+- [x] CHK-059 [US-003] events.speakerIds references `profiles` table correctly
+- [x] CHK-060 [US-003] events.tags references `tags` table correctly
 - [ ] CHK-061 [US-005] projects.authorId references `profiles` table correctly
 - [ ] CHK-062 [US-005] projects.tags references `tags` table correctly
 - [ ] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
@@ -154,9 +154,9 @@
 
 - [ ] CHK-084 [US-001] Can insert profile with each role via Dashboard
 - [ ] CHK-085 [US-001] Can insert profile with each profileStatus via Dashboard
-- [ ] CHK-086 [US-003] Can insert event with all required fields via Dashboard
-- [ ] CHK-087 [US-003] Can insert event with speaker references via Dashboard
-- [ ] CHK-088 [US-003] Can insert event with tag references via Dashboard
+- [x] CHK-086 [US-003] Can insert event with all required fields via Dashboard
+- [x] CHK-087 [US-003] Can insert event with speaker references via Dashboard
+- [x] CHK-088 [US-003] Can insert event with tag references via Dashboard
 - [ ] CHK-089 [US-005] Can insert project with isPublished: true and false
 - [ ] CHK-090 [US-006] Can insert experiment with each status value
 - [ ] CHK-091 [US-009] Can insert testimonial with and without eventId

@@ -1,8 +1,8 @@
 ---
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
-last_updated: '2026-01-16T22:15:00.000Z'
-stories_completed: 2
+last_updated: '2026-01-16T21:16:10.000Z'
+stories_completed: 3
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -56,5 +56,30 @@ patterns: []
 - Convex automatically appends `_creationTime` to index fields
 - Foundation tables (profiles, tags) must be complete before content tables can reference them
 - Tags table is simple but critical for cross-content discovery functionality
+
+---
+
+## 2026-01-16 - US-003: Events Table
+
+**Implemented:**
+- Defined `events` table in `convex/schema.ts` with all required and optional fields
+- Required fields: title, slug, description, date (v.number()), timezone, location, isVirtual (v.boolean()), priceInCents (v.number())
+- Optional fields: endDate, agenda, capacity, speakerIds (v.array(v.id("profiles"))), tags (v.array(v.id("tags"))), isFeatured, isArchived
+- Created indexes: `by_slug` (URL routing), `by_date` (chronological listing), `by_isFeatured_and_date` (featured events sorted by date)
+- Added documentation comments explaining table purpose and field usage
+
+**Files Changed:**
+- `convex/schema.ts` - Added events table with all fields and indexes
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 3 new indexes)
+
+**Learnings:**
+- Events table follows the same pattern as profiles and tags - required/optional field grouping with comments
+- speakerIds and tags are arrays of foreign key IDs using v.id() validator
+- priceInCents uses v.number() for integer storage (avoiding floating-point currency issues)
+- Compound index `by_isFeatured_and_date` enables efficient queries for featured events sorted chronologically
 
 ---

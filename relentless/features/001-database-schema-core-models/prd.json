@@ -56,7 +56,7 @@
         "Can insert event with all fields via Convex Dashboard"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Primary revenue entity",
       "dependencies": ["US-001", "US-002"],
       "phase": "Stories"

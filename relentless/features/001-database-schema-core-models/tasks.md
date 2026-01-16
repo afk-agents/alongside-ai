@@ -90,30 +90,31 @@
 **Description**: As an admin, I want a complete events schema so that I can create and manage educational events with all required fields.
 
 **Acceptance Criteria:**
-- [ ] `events` table defined in `convex/schema.ts`
-- [ ] Required fields: `title`, `slug`, `description`, `date`, `timezone`, `location`, `isVirtual`, `priceInCents`
-- [ ] Optional fields: `endDate`, `agenda`, `capacity`, `speakerIds`, `tags`, `isFeatured`, `isArchived`
-- [ ] `speakerIds` uses `v.array(v.id("profiles"))`
-- [ ] `tags` uses `v.array(v.id("tags"))`
-- [ ] `priceInCents` uses `v.number()` (integers for currency)
-- [ ] Indexes defined: `by_slug`, `by_date`, `by_isFeatured_and_date`
-- [ ] Can insert event with all fields via Convex Dashboard
-- [ ] Can query events by date using index
-- [ ] TypeScript compiles without errors
-- [ ] Lint passes
+- [x] `events` table defined in `convex/schema.ts`
+- [x] Required fields: `title`, `slug`, `description`, `date`, `timezone`, `location`, `isVirtual`, `priceInCents`
+- [x] Optional fields: `endDate`, `agenda`, `capacity`, `speakerIds`, `tags`, `isFeatured`, `isArchived`
+- [x] `speakerIds` uses `v.array(v.id("profiles"))`
+- [x] `tags` uses `v.array(v.id("tags"))`
+- [x] `priceInCents` uses `v.number()` (integers for currency)
+- [x] Indexes defined: `by_slug`, `by_date`, `by_isFeatured_and_date`
+- [x] Can insert event with all fields via Convex Dashboard
+- [x] Can query events by date using index
+- [x] TypeScript compiles without errors
+- [x] Lint passes
 
 **Dependencies:** US-001 (profiles), US-002 (tags)
 **Phase:** Stories
 **Priority:** P1
+**Status:** COMPLETE
 
 ### Implementation Tasks - User Story 1
 
-- [ ] T011 [US-003] Add `events` table definition with all required fields in `convex/schema.ts`
-- [ ] T012 [US-003] Add `events` table optional fields including `speakerIds` and `tags` references
-- [ ] T013 [US-003] Add indexes for `events` table: `by_slug`, `by_date`, `by_isFeatured_and_date`
-- [ ] T014 [US-003] Run `bunx convex dev` to deploy schema
-- [ ] T015 [US-003] Run `bunx tsc --noEmit` to verify compilation
-- [ ] T016 [US-003] Manual test: Insert sample event via Convex Dashboard
+- [x] T011 [US-003] Add `events` table definition with all required fields in `convex/schema.ts`
+- [x] T012 [US-003] Add `events` table optional fields including `speakerIds` and `tags` references
+- [x] T013 [US-003] Add indexes for `events` table: `by_slug`, `by_date`, `by_isFeatured_and_date`
+- [x] T014 [US-003] Run `bunx convex dev` to deploy schema
+- [x] T015 [US-003] Run `bunx tsc --noEmit` to verify compilation
+- [x] T016 [US-003] Manual test: Insert sample event via Convex Dashboard
 
 **Checkpoint**: Events schema complete and deployable
 

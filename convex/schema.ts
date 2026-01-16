@@ -58,4 +58,29 @@ export default defineSchema({
   })
     .index("by_slug", ["slug"]) // URL routing, tag pages
     .index("by_name", ["name"]), // Lookup by name
+
+  // Events - primary revenue driver for educational events
+  events: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+    description: v.string(), // Rich text description
+    date: v.number(), // Start timestamp (Unix ms)
+    timezone: v.string(), // IANA timezone (e.g., "America/New_York")
+    location: v.string(), // Physical address or "Virtual"
+    isVirtual: v.boolean(), // Virtual vs in-person flag
+    priceInCents: v.number(), // Price in cents (0 for free)
+
+    // Optional fields
+    endDate: v.optional(v.number()), // End timestamp for multi-day events
+    agenda: v.optional(v.string()), // Event schedule/agenda
+    capacity: v.optional(v.number()), // Maximum attendees
+    speakerIds: v.optional(v.array(v.id("profiles"))), // Speaker profile references
+    tags: v.optional(v.array(v.id("tags"))), // Category tags
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+    isArchived: v.optional(v.boolean()), // Soft archive for past events
+  })
+    .index("by_slug", ["slug"]) // URL routing
+    .index("by_date", ["date"]) // Chronological listing, upcoming vs past
+    .index("by_isFeatured_and_date", ["isFeatured", "date"]), // Featured events sorted by date
 });
