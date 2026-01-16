@@ -150,8 +150,8 @@
         "Schema deploys successfully: `bunx convex dev`"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Videos and playlists tables implemented with all required/optional fields and proper indexes",
       "dependencies": ["US-001", "US-002"],
       "phase": "Stories"
     },

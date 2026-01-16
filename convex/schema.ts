@@ -158,4 +158,37 @@ export default defineSchema({
     .index("by_authorId", ["authorId"]) // Author's articles
     .index("by_publishedAt", ["publishedAt"]) // Chronological listing
     .index("by_isFeatured_and_publishedAt", ["isFeatured", "publishedAt"]), // Featured articles sorted by date
+
+  // Playlists - video series groupings
+  playlists: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+
+    // Optional fields
+    description: v.optional(v.string()),
+    displayOrder: v.optional(v.number()), // Sort order for display
+  }).index("by_slug", ["slug"]), // URL routing
+
+  // Videos - YouTube-hosted educational content
+  videos: defineTable({
+    // Required fields
+    title: v.string(),
+    slug: v.string(), // URL-friendly identifier
+    youtubeId: v.string(), // YouTube video ID
+    authorId: v.id("profiles"), // Author profile reference
+    isPublished: v.boolean(), // Draft/published state
+
+    // Optional fields
+    description: v.optional(v.string()), // Video description
+    playlistId: v.optional(v.id("playlists")), // Playlist grouping
+    duration: v.optional(v.number()), // Duration in seconds
+    tags: v.optional(v.array(v.id("tags"))), // Category tags
+    isFeatured: v.optional(v.boolean()), // Homepage feature flag
+  })
+    .index("by_slug", ["slug"]) // URL routing
+    .index("by_authorId", ["authorId"]) // Author's videos
+    .index("by_playlistId", ["playlistId"]) // Videos in playlist
+    .index("by_isPublished", ["isPublished"]) // Public videos only
+    .index("by_isFeatured", ["isFeatured"]), // Featured videos
 });

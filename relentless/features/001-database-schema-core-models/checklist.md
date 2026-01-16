@@ -14,8 +14,8 @@
 - [x] CHK-004 [US-005] `projects` table exists in `convex/schema.ts`
 - [x] CHK-005 [US-006] `experiments` table exists in `convex/schema.ts`
 - [x] CHK-006 [US-007] `articles` table exists in `convex/schema.ts`
-- [ ] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
-- [ ] CHK-008 [US-008] `playlists` table exists in `convex/schema.ts`
+- [x] CHK-007 [US-008] `videos` table exists in `convex/schema.ts`
+- [x] CHK-008 [US-008] `playlists` table exists in `convex/schema.ts`
 - [ ] CHK-009 [US-009] `testimonials` table exists in `convex/schema.ts`
 - [x] CHK-010 [Cleanup] Placeholder `numbers` table removed from schema
 
@@ -74,11 +74,11 @@
 
 ### Videos & Playlists
 
-- [ ] CHK-041 [US-008] `youtubeId` is required string in videos table
-- [ ] CHK-042 [US-008] `playlistId` uses `v.optional(v.id("playlists"))`
-- [ ] CHK-043 [US-008] `duration` uses `v.optional(v.number())` for seconds
-- [ ] CHK-044 [US-008] Videos index `by_playlistId` defined for playlist queries
-- [ ] CHK-045 [US-008] Playlists `displayOrder` uses `v.optional(v.number())`
+- [x] CHK-041 [US-008] `youtubeId` is required string in videos table
+- [x] CHK-042 [US-008] `playlistId` uses `v.optional(v.id("playlists"))`
+- [x] CHK-043 [US-008] `duration` uses `v.optional(v.number())` for seconds
+- [x] CHK-044 [US-008] Videos index `by_playlistId` defined for playlist queries
+- [x] CHK-045 [US-008] Playlists `displayOrder` uses `v.optional(v.number())`
 
 ---
 
@@ -113,8 +113,8 @@
 - [x] CHK-062 [US-005] projects.tags references `tags` table correctly
 - [x] CHK-063 [US-006] experiments.authorId references `profiles` table correctly
 - [x] CHK-064 [US-007] articles.authorId references `profiles` table correctly
-- [ ] CHK-065 [US-008] videos.authorId references `profiles` table correctly
-- [ ] CHK-066 [US-008] videos.playlistId references `playlists` table correctly
+- [x] CHK-065 [US-008] videos.authorId references `profiles` table correctly
+- [x] CHK-066 [US-008] videos.playlistId references `playlists` table correctly
 - [ ] CHK-067 [US-009] testimonials.eventId references `events` table correctly
 
 ---

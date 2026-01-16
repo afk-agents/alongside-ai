@@ -217,17 +217,17 @@
 **Description**: As an admin, I want videos and playlists schemas so that I can organize educational content.
 
 **Acceptance Criteria:**
-- [ ] `videos` table defined with `youtubeId` required field
-- [ ] `playlistId` references `playlists` table
-- [ ] `playlists` table defined with `title`, `slug`, `description`, `displayOrder`
-- [ ] Videos indexes: `by_slug`, `by_authorId`, `by_playlistId`, `by_isPublished`, `by_isFeatured`
-- [ ] Playlists index: `by_slug`
-- [ ] TypeScript compiles without errors
+- [x] `videos` table defined with `youtubeId` required field
+- [x] `playlistId` references `playlists` table
+- [x] `playlists` table defined with `title`, `slug`, `description`, `displayOrder`
+- [x] Videos indexes: `by_slug`, `by_authorId`, `by_playlistId`, `by_isPublished`, `by_isFeatured`
+- [x] Playlists index: `by_slug`
+- [x] TypeScript compiles without errors
 
 **Dependencies:** US-001 (profiles), US-002 (tags)
 **Phase:** Stories
 **Priority:** P2
-**Parallel:** Yes (with US-005, US-006, US-007)
+**Status:** COMPLETE
 
 ### Implementation Tasks - User Story 3
 
@@ -237,11 +237,11 @@
 - [x] T024 [P] [US-006] Add indexes for `experiments` table
 - [x] T025 [P] [US-007] Add `articles` table definition in `convex/schema.ts`
 - [x] T026 [P] [US-007] Add indexes for `articles` table
-- [ ] T027 [P] [US-008] Add `playlists` table definition in `convex/schema.ts`
-- [ ] T028 [P] [US-008] Add `videos` table definition in `convex/schema.ts`
-- [ ] T029 [P] [US-008] Add indexes for `videos` and `playlists` tables
-- [ ] T030 Run `bunx convex dev` to deploy all content tables
-- [ ] T031 Run `bunx tsc --noEmit` to verify compilation
+- [x] T027 [P] [US-008] Add `playlists` table definition in `convex/schema.ts`
+- [x] T028 [P] [US-008] Add `videos` table definition in `convex/schema.ts`
+- [x] T029 [P] [US-008] Add indexes for `videos` and `playlists` tables
+- [x] T030 Run `bunx convex dev` to deploy all content tables
+- [x] T031 Run `bunx tsc --noEmit` to verify compilation
 - [ ] T032 Manual test: Insert content with tags and verify relationships
 
 **Checkpoint**: All content tables complete

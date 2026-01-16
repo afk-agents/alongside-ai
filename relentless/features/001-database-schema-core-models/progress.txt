@@ -1,8 +1,8 @@
 ---
 feature: Database Schema & Core Models
 started: '2026-01-16T20:13:02.894Z'
-last_updated: '2026-01-16T21:25:00.000Z'
-stories_completed: 7
+last_updated: '2026-01-16T21:27:00.000Z'
+stories_completed: 8
 patterns: []
 ---
 # Progress Log: Database Schema & Core Models
@@ -190,5 +190,37 @@ patterns: []
 - `publishedAt` uses v.number() for Unix timestamp to enable chronological queries
 - `substackUrl` is optional for linking back to original Substack article source
 - Compound index `by_isFeatured_and_publishedAt` enables efficient queries for featured articles sorted by publication date
+
+---
+
+## 2026-01-16 - US-008: Videos & Playlists Tables
+
+**Implemented:**
+- Defined `playlists` table in `convex/schema.ts` for video series groupings
+- Playlists required fields: title, slug
+- Playlists optional fields: description, displayOrder (v.number())
+- Defined `videos` table in `convex/schema.ts` for YouTube-hosted educational content
+- Videos required fields: title, slug, youtubeId (v.string()), authorId (v.id("profiles")), isPublished (v.boolean())
+- Videos optional fields: description, playlistId (v.id("playlists")), duration (v.number()), tags (v.array(v.id("tags"))), isFeatured
+- Playlists index: `by_slug` (URL routing)
+- Videos indexes: `by_slug`, `by_authorId`, `by_playlistId`, `by_isPublished`, `by_isFeatured`
+
+**Files Changed:**
+- `convex/schema.ts` - Added playlists and videos tables with all fields and indexes
+- `relentless/features/001-database-schema-core-models/tasks.md` - Updated US-008 status to COMPLETE
+- `relentless/features/001-database-schema-core-models/checklist.md` - Marked video/playlist validation items as verified
+- `relentless/features/001-database-schema-core-models/prd.json` - Marked US-008 passes: true
+
+**Quality Checks:**
+- `bunx tsc --noEmit` - PASS (0 errors)
+- `bun run lint` - PASS (0 warnings)
+- `bunx convex dev --once` - PASS (schema deployed successfully with 6 new indexes)
+
+**Learnings:**
+- Videos table follows the same pattern as projects - required/optional field grouping with comments
+- `youtubeId` is required (stores YouTube video ID) while `playlistId` is optional reference to playlists table
+- `duration` stores video length in seconds as v.number()
+- Index `by_playlistId` enables efficient queries for all videos in a playlist
+- Playlists is a simpler table primarily for grouping/organizing videos
 
 ---
