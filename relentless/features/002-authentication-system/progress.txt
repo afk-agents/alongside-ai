@@ -1,7 +1,7 @@
 ---
 feature: unknown
 started: '2026-01-16T21:35:32.249Z'
-last_updated: '2026-01-16T22:30:00.000Z'
+last_updated: '2026-01-16T21:43:58.238Z'
 stories_completed: 4
 patterns: []
 ---
@@ -97,5 +97,36 @@ patterns: []
 - Session expiration is configurable via session.totalDurationMs and session.inactiveDurationMs in convexAuth config
 - Default session duration is 30 days for both total and inactive duration
 - The middleware also prepares infrastructure for US-005 route protection
+
+---
+
+## 2026-01-16 - US-005 (Role-Based Access Control)
+
+**Implemented:**
+- Updated middleware.ts with route protection using createRouteMatcher and nextjsMiddlewareRedirect
+- Route matchers defined for: auth pages (/login, /signup), protected routes (/dashboard, /profile, /settings), admin routes (/admin), member routes (/members)
+- Unauthenticated users are redirected to /login for protected, admin, and member routes
+- Authenticated users are redirected away from auth pages to homepage
+- Created requireAuth helper function in convex/users.ts for server-side auth checks
+- Created requireRole helper function in convex/users.ts for role-based access control
+- Added AuthenticationError and AuthorizationError custom error classes
+- Created ForbiddenPage component for 403 error display
+- Created example admin page (/admin) that shows 403 for non-admin users
+- Created example members page (/members) that shows 403 for guest users
+
+**Files Changed:**
+- middleware.ts (updated - added route matchers and protection logic)
+- convex/users.ts (updated - added requireAuth, requireRole, Role type, and error classes)
+- components/auth/ForbiddenPage.tsx (new - 403 error page component)
+- app/admin/page.tsx (new - example admin page with RBAC)
+- app/members/page.tsx (new - example members page with RBAC)
+
+**Learnings:**
+- Middleware can only check authentication status (isAuthenticated), not roles
+- Role checking must be done server-side in Convex functions using requireRole helper
+- The pattern is: middleware checks auth → page checks role → Convex functions verify role
+- createRouteMatcher supports glob patterns (e.g., "/admin(.*)" matches all admin routes)
+- ForbiddenPage component provides consistent 403 UI across the app
+- Custom error classes (AuthenticationError, AuthorizationError) enable proper error handling in Convex functions
 
 ---

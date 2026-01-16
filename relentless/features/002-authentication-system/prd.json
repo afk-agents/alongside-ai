@@ -111,8 +111,8 @@
         "T025 [US-005] Configure middleware to show 403 for unauthorized role access"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "",
+      "passes": true,
+      "notes": "Completed - middleware.ts updated with route matchers and auth redirects. requireAuth and requireRole helper functions added to convex/users.ts. Admin and member pages created with ForbiddenPage component for 403 errors.",
       "phase": "Stories"
     },
     {

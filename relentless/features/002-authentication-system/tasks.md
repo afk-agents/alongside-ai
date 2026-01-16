@@ -135,25 +135,25 @@
 **Description**: As an admin, I want to enforce role-based permissions so that users can only access appropriate content.
 
 **Acceptance Criteria:**
-- [ ] Unauthenticated users redirected to /login when accessing protected routes
-- [ ] Users with role="guest" cannot access member-only routes
-- [ ] Users with role="member" cannot access admin routes
-- [ ] Users with role="admin" can access admin routes
-- [ ] Server-side role checking available via helper functions
-- [ ] Typecheck passes
-- [ ] Lint passes
+- [x] Unauthenticated users redirected to /login when accessing protected routes
+- [x] Users with role="guest" cannot access member-only routes
+- [x] Users with role="member" cannot access admin routes
+- [x] Users with role="admin" can access admin routes
+- [x] Server-side role checking available via helper functions
+- [x] Typecheck passes
+- [x] Lint passes
 
 **Dependencies:** None
 **Phase:** Stories
 **Priority:** P2
-**Status:** pending
+**Status:** complete
 
 **Implementation Tasks:**
-- [ ] T021 [P] [US-005] Create `middleware.ts` with route protection logic
-- [ ] T022 [US-005] Add helper function `requireAuth` in `convex/users.ts` for server-side auth checks
-- [ ] T023 [US-005] Add helper function `requireRole` in `convex/users.ts` for role-based access
-- [ ] T024 [US-005] Configure middleware to redirect unauthenticated users to /login for protected routes
-- [ ] T025 [US-005] Configure middleware to show 403 for unauthorized role access
+- [x] T021 [P] [US-005] Create `middleware.ts` with route protection logic
+- [x] T022 [US-005] Add helper function `requireAuth` in `convex/users.ts` for server-side auth checks
+- [x] T023 [US-005] Add helper function `requireRole` in `convex/users.ts` for role-based access
+- [x] T024 [US-005] Configure middleware to redirect unauthenticated users to /login for protected routes
+- [x] T025 [US-005] Configure middleware to show 403 for unauthorized role access
 
 ---
 

@@ -14,12 +14,12 @@
 
 ## Backend: User Queries (convex/users.ts)
 
-- [ ] CHK-006 [US5] `getCurrentUser` query returns user with email and profile
-- [ ] CHK-007 [US5] `getCurrentUserProfile` query returns profile with role
-- [ ] CHK-008 [US5] Queries return `null` when user is not authenticated
-- [ ] CHK-009 [US5] `requireRole` helper checks user role against allowed roles
-- [ ] CHK-010 [US5] `withIndex("by_userId")` used for profile lookup (not filter)
-- [ ] CHK-011 [Constitution] Return validators match actual return types exactly
+- [x] CHK-006 [US5] `getCurrentUser` query returns user with email and profile
+- [x] CHK-007 [US5] `getCurrentUserProfile` query returns profile with role
+- [x] CHK-008 [US5] Queries return `null` when user is not authenticated
+- [x] CHK-009 [US5] `requireRole` helper checks user role against allowed roles
+- [x] CHK-010 [US5] `withIndex("by_userId")` used for profile lookup (not filter)
+- [x] CHK-011 [Constitution] Return validators match actual return types exactly
 
 ## Frontend: Auth Provider
 
@@ -60,10 +60,10 @@
 ## Middleware & Route Protection (US5)
 
 - [x] CHK-036 [US5] `middleware.ts` uses `convexAuthNextjsMiddleware`
-- [ ] CHK-037 [US5] Protected routes redirect unauthenticated users to /login
-- [ ] CHK-038 [US5] Auth pages (/login, /signup) redirect authenticated users to /
-- [ ] CHK-039 [US5] Admin routes return 403 for non-admin users
-- [ ] CHK-040 [US5] Route matchers correctly identify protected paths
+- [x] CHK-037 [US5] Protected routes redirect unauthenticated users to /login
+- [x] CHK-038 [US5] Auth pages (/login, /signup) redirect authenticated users to /
+- [x] CHK-039 [US5] Admin routes return 403 for non-admin users
+- [x] CHK-040 [US5] Route matchers correctly identify protected paths
 
 ## Session Persistence (US4)
 
@@ -73,19 +73,19 @@
 
 ## Security
 
-- [ ] CHK-044 [US1] Passwords never logged or exposed in error messages
+- [x] CHK-044 [US1] Passwords never logged or exposed in error messages
 - [x] CHK-045 [US2] Generic error messages prevent email enumeration
-- [ ] CHK-046 [US5] Role checked server-side in Convex functions (not just middleware)
-- [ ] CHK-047 [Constitution] No secrets committed to git
-- [ ] CHK-048 [Edge Case] Rate limiting handled by @convex-dev/auth
+- [x] CHK-046 [US5] Role checked server-side in Convex functions (not just middleware)
+- [x] CHK-047 [Constitution] No secrets committed to git
+- [x] CHK-048 [Edge Case] Rate limiting handled by @convex-dev/auth
 
 ## Constitution Compliance
 
-- [ ] CHK-049 [Constitution] TypeScript strict mode passes (`bunx tsc --noEmit`)
-- [ ] CHK-050 [Constitution] ESLint passes (`bun run lint`) with 0 warnings
-- [ ] CHK-051 [Constitution] No `any` types in auth code
-- [ ] CHK-052 [Constitution] `"use client"` directive only on components that need it
-- [ ] CHK-053 [Constitution] Conventional commit format used for all commits
+- [x] CHK-049 [Constitution] TypeScript strict mode passes (`bunx tsc --noEmit`)
+- [x] CHK-050 [Constitution] ESLint passes (`bun run lint`) with 0 warnings
+- [x] CHK-051 [Constitution] No `any` types in auth code
+- [x] CHK-052 [Constitution] `"use client"` directive only on components that need it
+- [x] CHK-053 [Constitution] Conventional commit format used for all commits
 - [x] CHK-054 [Constitution] Components organized in `components/auth/` directory
 
 ## Gaps & Ambiguities
