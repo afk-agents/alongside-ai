@@ -1,0 +1,239 @@
+---
+feature: Founder Profiles & About Page
+started: 2026-01-17
+last_updated: 2026-01-17
+stories_completed: 10
+---
+
+# Progress Log: Founder Profiles & About Page
+
+## 2026-01-17 - Feature Specification Created
+
+- Created feature branch `006-founder-profiles-about-page`
+- Generated specification with 5 user stories (2 P1, 2 P2, 1 P3)
+- Identified schema change needed: add `slug` field to profiles table
+- Documented assumptions about founder role usage and static content approach
+
+---
+
+## 2026-01-17 - US-002: Profile Queries (getFounders and getBySlug)
+
+**Implemented:**
+- Created `convex/profiles.ts` with two public queries
+- `getFounders`: Returns published admin profiles using composite index `by_role_and_profileStatus`
+- `getBySlug`: Returns single profile by URL slug using `by_slug` index, null for non-published
+- Both queries include full TypeScript return type validators with all profile fields
+
+**Files Changed:**
+- `convex/profiles.ts` (created)
+- `__tests__/convex/profiles.test.ts` (created - 13 tests)
+- `convex/_generated/api.d.ts` (regenerated)
+
+**Learnings:**
+- Followed TDD workflow: tests first, then implementation
+- Used convex-test pattern from existing tags.test.ts
+- Composite index `by_role_and_profileStatus` allows efficient founders query
+
+---
+
+## 2026-01-17 - US-003: ProfilePhoto Component with Fallback Avatar
+
+**Implemented:**
+- Created `components/profiles/ProfilePhoto.tsx` with three display modes:
+  - Image display using Next.js Image component when photoUrl provided
+  - Initials avatar when displayName exists but no photo (first 2 initials)
+  - Generic user icon placeholder when neither available
+- Size variants: sm (32px), md (48px), lg (64px), xl (96px)
+- Graceful image error handling - falls back to initials or placeholder
+- Rounded circular design with proper accessibility labels
+
+**Files Changed:**
+- `components/profiles/ProfilePhoto.tsx` (created)
+- `__tests__/components/profiles/ProfilePhoto.test.tsx` (created - 18 tests)
+
+**Learnings:**
+- TDD workflow: wrote all 18 tests first, then implemented component
+- Used useState for image error state to handle fallback gracefully
+- Size variants use consistent Tailwind class mappings
+
+---
+
+## 2026-01-17 - US-004: SocialLinks Component
+
+**Implemented:**
+- Created `components/profiles/SocialLinks.tsx` with icon links for:
+  - LinkedIn, Twitter (X), GitHub, Website
+- Security: `target="_blank" rel="noopener noreferrer"` on all links
+- Accessibility: `aria-label` on each link, `aria-hidden` on icons
+- Optional `showLabels` prop for text labels
+- Returns `null` when no links provided (empty state)
+- Created `components/profiles/index.ts` barrel file
+
+**Files Changed:**
+- `components/profiles/SocialLinks.tsx` (created)
+- `components/profiles/index.ts` (created)
+- `__tests__/components/profiles/SocialLinks.test.tsx` (created - 19 tests)
+
+**Learnings:**
+- TDD workflow: wrote all 19 tests first, then implemented component
+- Used config object pattern for clean icon/label mapping
+- SVG icons with proper accessibility attributes
+
+---
+
+## 2026-01-17 - US-005: ProfileCard Component for About Page
+
+**Implemented:**
+- Created `components/profiles/ProfileCard.tsx` composing profile components
+- Displays: ProfilePhoto (lg), displayName as link, bio excerpt, SocialLinks
+- Bio truncation with `line-clamp-3` for consistent card heights
+- Name links to `/profiles/[slug]` when slug exists
+- Optional `showViewProfile` prop for explicit link instead of wrapping
+- Hover state with `hover:shadow-lg` transition
+- Full-width responsive design
+
+**Files Changed:**
+- `components/profiles/ProfileCard.tsx` (created)
+- `components/profiles/index.ts` (updated - added ProfileCard export)
+- `__tests__/components/profiles/ProfileCard.test.tsx` (created - 19 tests)
+
+**Learnings:**
+- Avoided nested `<a>` tags by making displayName the link instead of wrapping card
+- line-clamp Tailwind utility provides clean text truncation
+
+---
+
+## 2026-01-17 - US-006: Mission and Values Sections
+
+**Implemented:**
+- Created `components/about/MissionSection.tsx` with:
+  - "Learning AI, Together" headline
+  - Two mission statement paragraphs
+  - Gradient background styling (blue-50 to indigo-100)
+  - Centered text layout with max-width constraint
+- Created `components/about/ValuesSection.tsx` with:
+  - "Our Values" heading
+  - 4 value cards: Community First, Practical Knowledge, Inclusive Access, Continuous Growth
+  - SVG icons with circular accent backgrounds
+  - Responsive grid: 1 col mobile, 2 col tablet, 4 col desktop
+- Created `components/about/index.ts` barrel file
+
+**Files Changed:**
+- `components/about/MissionSection.tsx` (created)
+- `components/about/ValuesSection.tsx` (created)
+- `components/about/index.ts` (created)
+- `__tests__/components/about/MissionSection.test.tsx` (created - 5 tests)
+- `__tests__/components/about/ValuesSection.test.tsx` (created - 9 tests)
+
+**Learnings:**
+- TDD workflow: wrote all 14 tests first, then implemented components
+- Values config array pattern allows clean mapping in JSX
+
+---
+
+## 2026-01-17 - US-007: Founder Section with Dynamic Data
+
+**Implemented:**
+- Created `components/about/FounderSection.tsx` with:
+  - `useQuery(api.profiles.getFounders)` for dynamic data fetching
+  - "Meet the Founders" heading
+  - Responsive grid: 1 col mobile, 2 col tablet
+  - Loading skeleton state while fetching
+  - "Coming soon" message for empty state
+  - Maps founders to ProfileCard components with `showViewProfile`
+- Updated `app/about/page.tsx` to compose all sections:
+  - MissionSection, ValuesSection, FounderSection
+  - Removed placeholder content
+
+**Files Changed:**
+- `components/about/FounderSection.tsx` (created)
+- `components/about/index.ts` (updated - added FounderSection export)
+- `app/about/page.tsx` (updated - composed all sections)
+- `__tests__/components/about/FounderSection.test.tsx` (created - 8 tests)
+
+**Learnings:**
+- Mocking pattern for Convex useQuery in tests
+- Skeleton loading provides better UX than spinner
+
+---
+
+## 2026-01-17 - US-008: Individual Profile Page Route
+
+**Implemented:**
+- Created `components/profiles/ProfilePage.tsx` with full profile layout:
+  - ProfilePhoto (xl size), displayName as h1, location with icon
+  - Full bio text with "About" heading
+  - Skills displayed as pill tags
+  - "Currently Working On" section
+  - SocialLinks integration
+  - Graceful handling of missing optional fields
+- Created `app/profiles/[slug]/page.tsx`:
+  - Uses React 19 `use()` to unwrap params Promise
+  - Fetches profile with `useQuery(api.profiles.getBySlug)`
+  - Loading skeleton state while fetching
+  - Calls `notFound()` when profile is null
+- Created `app/profiles/[slug]/not-found.tsx` with friendly 404 message
+
+**Files Changed:**
+- `components/profiles/ProfilePage.tsx` (created)
+- `components/profiles/index.ts` (updated - added ProfilePage export)
+- `app/profiles/[slug]/page.tsx` (created)
+- `app/profiles/[slug]/not-found.tsx` (created)
+- `__tests__/components/profiles/ProfilePage.test.tsx` (created - 14 tests)
+
+**Learnings:**
+- Next.js 15+ params are Promises requiring `use()` hook
+- `notFound()` from next/navigation triggers not-found.tsx
+
+---
+
+## 2026-01-17 - US-009: Admin Update Mutation for Profiles
+
+**Implemented:**
+- Added `update` mutation to `convex/profiles.ts` with:
+  - `requireRole(ctx, ["admin"])` for admin-only access
+  - Optional fields: displayName, bio, slug, socialLinks, workingOnNow, skills, location, profileStatus
+  - `validateSlug()` helper for slug format validation (2-50 chars, lowercase alphanumeric with hyphens)
+  - `slugExistsExcluding()` helper for uniqueness check (excludes current profile)
+  - Selective field patching - only updates provided fields
+
+**Files Changed:**
+- `convex/profiles.ts` (updated - added update mutation and helpers)
+- `__tests__/convex/profiles.test.ts` (updated - 10 new tests)
+
+**Learnings:**
+- Used existing `requireRole` helper pattern from codebase
+- Reused `validateSlug` pattern from tags module
+- Build patch object dynamically to only update provided fields
+
+---
+
+## 2026-01-17 - US-010: Admin Photo Upload Functionality
+
+**Implemented:**
+- Added `generateUploadUrl` mutation to `convex/profiles.ts`:
+  - Requires admin role via `requireRole(ctx, ["admin"])`
+  - Returns signed upload URL from `ctx.storage.generateUploadUrl()`
+- Added `getPhotoUrl` query to `convex/profiles.ts`:
+  - Accepts `storageId` with `v.id("_storage")` validator
+  - Returns URL from `ctx.storage.getUrl()` or null
+- Updated `ProfilePhoto` component:
+  - Added `photoStorageId` prop of type `Id<"_storage">`
+  - Uses `useQuery` to fetch URL when `photoStorageId` provided
+  - Prefers `photoUrl` over `photoStorageId` when both provided
+  - Falls back to initials or placeholder while loading/on null
+
+**Files Changed:**
+- `convex/profiles.ts` (updated - added generateUploadUrl and getPhotoUrl)
+- `components/profiles/ProfilePhoto.tsx` (updated - added photoStorageId support)
+- `__tests__/convex/profiles.test.ts` (updated - 4 new tests)
+- `__tests__/components/profiles/ProfilePhoto.test.tsx` (updated - 4 new tests)
+- `__tests__/components/profiles/ProfileCard.test.tsx` (updated - added useQuery mock)
+- `__tests__/components/profiles/ProfilePage.test.tsx` (updated - added useQuery mock)
+
+**Learnings:**
+- Convex storage API: `generateUploadUrl()` for upload, `getUrl()` for retrieval
+- `useQuery` with `"skip"` conditional to avoid calling when no storageId
+- Need to mock `convex/react` in tests that use components with `useQuery`
+
+---

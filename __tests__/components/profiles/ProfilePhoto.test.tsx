@@ -1,7 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { screen, fireEvent } from "@testing-library/react";
 import { render } from "@/__tests__/setup/test-utils";
 import { ProfilePhoto } from "@/components/profiles/ProfilePhoto";
+
+// Mock the Convex useQuery hook
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(),
+}));
+
+import { useQuery } from "convex/react";
 
 describe("ProfilePhoto", () => {
   describe("with photoUrl", () => {
@@ -165,6 +172,69 @@ describe("ProfilePhoto", () => {
 
       const container = screen.getByTestId("profile-photo");
       expect(container).toHaveAttribute("aria-label", "Profile photo");
+    });
+  });
+
+  describe("with photoStorageId", () => {
+    beforeEach(() => {
+      vi.mocked(useQuery).mockReset();
+    });
+
+    it("renders image when storage URL is fetched successfully", () => {
+      vi.mocked(useQuery).mockReturnValue("https://storage.convex.cloud/photo.jpg");
+
+      render(
+        <ProfilePhoto
+          photoStorageId={"abc123" as unknown as import("@/convex/_generated/dataModel").Id<"_storage">}
+          displayName="Storage User"
+        />
+      );
+
+      const img = screen.getByRole("img", { name: /storage user/i });
+      expect(img).toBeInTheDocument();
+    });
+
+    it("shows loading state while fetching URL", () => {
+      vi.mocked(useQuery).mockReturnValue(undefined);
+
+      render(
+        <ProfilePhoto
+          photoStorageId={"abc123" as unknown as import("@/convex/_generated/dataModel").Id<"_storage">}
+          displayName="Loading User"
+        />
+      );
+
+      // Should show initials while loading
+      expect(screen.getByText("LU")).toBeInTheDocument();
+    });
+
+    it("shows initials when storage URL is null", () => {
+      vi.mocked(useQuery).mockReturnValue(null);
+
+      render(
+        <ProfilePhoto
+          photoStorageId={"abc123" as unknown as import("@/convex/_generated/dataModel").Id<"_storage">}
+          displayName="Null User"
+        />
+      );
+
+      // Should show initials when URL is null
+      expect(screen.getByText("NU")).toBeInTheDocument();
+    });
+
+    it("prefers photoUrl over photoStorageId when both provided", () => {
+      vi.mocked(useQuery).mockReturnValue("https://storage.convex.cloud/storage-photo.jpg");
+
+      render(
+        <ProfilePhoto
+          photoUrl="https://example.com/direct-photo.jpg"
+          photoStorageId={"abc123" as unknown as import("@/convex/_generated/dataModel").Id<"_storage">}
+          displayName="Both User"
+        />
+      );
+
+      const img = screen.getByRole("img");
+      expect(img).toHaveAttribute("src", expect.stringContaining("direct-photo.jpg"));
     });
   });
 });

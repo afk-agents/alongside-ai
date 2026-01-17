@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 type Size = "sm" | "md" | "lg" | "xl";
 
 interface ProfilePhotoProps {
   photoUrl?: string;
+  photoStorageId?: Id<"_storage">;
   displayName?: string;
   size?: Size;
 }
@@ -42,12 +46,22 @@ function getInitials(displayName: string): string {
 
 export function ProfilePhoto({
   photoUrl,
+  photoStorageId,
   displayName,
   size = "md",
 }: ProfilePhotoProps) {
   const [imageError, setImageError] = useState(false);
 
-  const showImage = photoUrl && !imageError;
+  // Fetch URL from storage if photoStorageId is provided
+  const storageUrl = useQuery(
+    api.profiles.getPhotoUrl,
+    photoStorageId ? { storageId: photoStorageId } : "skip"
+  );
+
+  // Prefer photoUrl over storageUrl
+  const effectivePhotoUrl = photoUrl || (storageUrl ?? undefined);
+
+  const showImage = effectivePhotoUrl && !imageError;
   const showInitials = !showImage && displayName;
 
   const baseClasses = `rounded-full overflow-hidden flex items-center justify-center ${sizeClasses[size]}`;
@@ -60,7 +74,7 @@ export function ProfilePhoto({
         aria-label={displayName || "Profile photo"}
       >
         <Image
-          src={photoUrl}
+          src={effectivePhotoUrl}
           alt={displayName || "Profile photo"}
           width={imageSizes[size]}
           height={imageSizes[size]}

@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { render } from "@/__tests__/setup/test-utils";
 import { ProfilePage } from "@/components/profiles/ProfilePage";
+
+// Mock the Convex useQuery hook for ProfilePhoto component
+vi.mock("convex/react", () => ({
+  useQuery: vi.fn(() => undefined),
+}));
 
 const mockProfile = {
   _id: "profile123" as unknown as import("convex/values").GenericId<"profiles">,

@@ -183,3 +183,33 @@ export const update = mutation({
     return null;
   },
 });
+
+/**
+ * Generate a signed upload URL for profile photos (admin only).
+ *
+ * Requires admin role. Returns a short-lived URL that can be used to
+ * upload a file directly to Convex storage.
+ */
+export const generateUploadUrl = mutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/**
+ * Get a URL for a stored photo by its storage ID.
+ *
+ * Returns the URL if the file exists, or null if it doesn't.
+ */
+export const getPhotoUrl = query({
+  args: { storageId: v.id("_storage") },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
