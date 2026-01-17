@@ -29,7 +29,7 @@ About page with mission, values, and founder bios (David & Nathan). Founder prof
 
 ### Content Sections
 
-- [ ] **Blog/Articles Section**
+- [x] **Blog/Articles Section**
 Article listing page with filtering. Individual article pages with rich formatting. Author attribution. Related content links. Substack sync (manual or RSS initially).
 
 - [ ] **Projects Showcase (The Lab)**
