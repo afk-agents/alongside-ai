@@ -732,3 +732,800 @@ describe("articles.getBySlug query", () => {
     expect(result?.title).toBe("Article 5");
   });
 });
+
+// Helper to create admin user context
+async function setupAdminUser(t: TestContext) {
+  const { userId, profileId } = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "admin",
+      profileStatus: "published",
+      displayName: "Admin User",
+      slug: "admin-user",
+    });
+    return { userId, profileId };
+  });
+
+  return {
+    t: t.withIdentity({
+      subject: userId,
+      issuer: "test",
+      tokenIdentifier: `test|${userId}`,
+    }),
+    userId,
+    profileId,
+  };
+}
+
+// Helper to create guest user context
+async function setupGuestUser(t: TestContext) {
+  const { userId, profileId } = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "guest",
+      profileStatus: "locked",
+    });
+    return { userId, profileId };
+  });
+
+  return {
+    t: t.withIdentity({
+      subject: userId,
+      issuer: "test",
+      tokenIdentifier: `test|${userId}`,
+    }),
+    userId,
+    profileId,
+  };
+}
+
+// Helper to create a published profile for use as article author
+async function createPublishedProfile(t: TestContext) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "member",
+      profileStatus: "published",
+      displayName: "Published Author",
+      slug: "published-author",
+    });
+    return profileId;
+  });
+}
+
+describe("articles.listAdmin query", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+
+    await expect(guestCtx.query(api.articles.listAdmin, {})).rejects.toThrow(
+      /Required role: admin/
+    );
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+
+    await expect(t.query(api.articles.listAdmin, {})).rejects.toThrow(
+      /Authentication required/
+    );
+  });
+
+  it("returns empty array when no articles exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns all articles sorted by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const now = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Older Article",
+      slug: "older-article",
+      publishedAt: now - 86400000,
+    });
+    await createTestArticle(t, profileId, {
+      title: "Newer Article",
+      slug: "newer-article",
+      publishedAt: now,
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("Newer Article");
+    expect(result[1].title).toBe("Older Article");
+  });
+
+  it("includes author displayName", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Test Article",
+      slug: "test-article",
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].authorName).toBe("Admin User");
+  });
+
+  it("handles deleted author gracefully", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await createTestArticle(t, authorId, {
+      title: "Orphan Article",
+      slug: "orphan-article",
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.delete(authorId);
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].authorName).toBeUndefined();
+  });
+
+  it("returns correct shape with minimal fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    await createTestArticle(t, profileId, {
+      title: "Admin Article",
+      slug: "admin-article",
+      tags: [tagId, tagId], // Intentionally duplicate to verify count
+      isFeatured: true,
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty("_id");
+    expect(result[0]).toHaveProperty("title", "Admin Article");
+    expect(result[0]).toHaveProperty("slug", "admin-article");
+    expect(result[0]).toHaveProperty("publishedAt");
+    expect(result[0]).toHaveProperty("isFeatured", true);
+    expect(result[0]).toHaveProperty("authorName", "Admin User");
+    expect(result[0]).toHaveProperty("tagCount", 2);
+  });
+});
+
+describe("articles.get query (admin)", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.query(api.articles.get, { id: articleId })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(t.query(api.articles.get, { id: articleId })).rejects.toThrow(
+      /Authentication required/
+    );
+  });
+
+  it("returns null for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    const result = await adminCtx.query(api.articles.get, { id: deletedId });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns full article data for editing", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    const publishedAt = Date.now();
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Edit Article",
+      slug: "edit-article",
+      content: "Full content",
+      excerpt: "Short excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/edit",
+      publishedAt,
+    });
+
+    const result = await adminCtx.query(api.articles.get, { id: articleId });
+
+    expect(result).not.toBeNull();
+    expect(result?._id).toBe(articleId);
+    expect(result?.title).toBe("Edit Article");
+    expect(result?.slug).toBe("edit-article");
+    expect(result?.content).toBe("Full content");
+    expect(result?.excerpt).toBe("Short excerpt");
+    expect(result?.authorId).toBe(profileId);
+    expect(result?.publishedAt).toBe(publishedAt);
+    expect(result?.tags).toEqual([tagId]);
+    expect(result?.isFeatured).toBe(true);
+    expect(result?.substackUrl).toBe("https://example.substack.com/p/edit");
+  });
+});
+
+describe("articles.create mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      guestCtx.mutation(api.articles.create, {
+        title: "Test",
+        slug: "test",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      t.mutation(api.articles.create, {
+        title: "Test",
+        slug: "test",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("creates article with all required fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "New Article",
+      slug: "new-article",
+      content: "Article content here",
+      authorId,
+    });
+
+    expect(articleId).toBeDefined();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("New Article");
+    expect(article?.slug).toBe("new-article");
+    expect(article?.content).toBe("Article content here");
+    expect(article?.authorId).toBe(authorId);
+    expect(article?.publishedAt).toBeDefined();
+  });
+
+  it("creates article with all optional fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagId = await createTestTag(t, "Test", "test");
+    const publishedAt = Date.now() - 86400000;
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Full Article",
+      slug: "full-article",
+      content: "Full content",
+      authorId,
+      excerpt: "Custom excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/full",
+      publishedAt,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.excerpt).toBe("Custom excerpt");
+    expect(article?.tags).toEqual([tagId]);
+    expect(article?.isFeatured).toBe(true);
+    expect(article?.substackUrl).toBe("https://example.substack.com/p/full");
+    expect(article?.publishedAt).toBe(publishedAt);
+  });
+
+  it("auto-generates excerpt from first 160 chars of content if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const longContent =
+      "This is a very long article content that exceeds one hundred sixty characters and should be truncated to create an automatic excerpt for the article preview display.";
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Auto Excerpt",
+      slug: "auto-excerpt",
+      content: longContent,
+      authorId,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.excerpt).toBeDefined();
+    expect(article?.excerpt?.length).toBeLessThanOrEqual(160);
+    expect(article?.excerpt).toBe(longContent.slice(0, 160));
+  });
+
+  it("validates slug format", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Slug",
+        slug: "INVALID SLUG",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Invalid slug format/);
+  });
+
+  it("rejects duplicate slug", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Existing",
+      slug: "existing-slug",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Duplicate",
+        slug: "existing-slug",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/already exists/);
+  });
+
+  it("verifies authorId references existing published profile", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked", // Not published
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Author",
+        slug: "invalid-author",
+        content: "Content",
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies all tagIds exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Tags",
+        slug: "invalid-tags",
+        content: "Content",
+        authorId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("defaults publishedAt to now if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const beforeCreate = Date.now();
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Default Date",
+      slug: "default-date",
+      content: "Content",
+      authorId,
+    });
+
+    const afterCreate = Date.now();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.publishedAt).toBeGreaterThanOrEqual(beforeCreate);
+    expect(article?.publishedAt).toBeLessThanOrEqual(afterCreate);
+  });
+});
+
+describe("articles.update mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.mutation(api.articles.update, {
+        id: articleId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      t.mutation(api.articles.update, {
+        id: articleId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("throws error for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: deletedId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Article not found/);
+  });
+
+  it("updates only provided fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Original Title",
+      slug: "original-slug",
+      content: "Original content",
+      excerpt: "Original excerpt",
+    });
+
+    await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      title: "Updated Title",
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("Updated Title");
+    expect(article?.slug).toBe("original-slug"); // Unchanged
+    expect(article?.content).toBe("Original content"); // Unchanged
+    expect(article?.excerpt).toBe("Original excerpt"); // Unchanged
+  });
+
+  it("validates slug uniqueness when changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    await createTestArticle(t, profileId, {
+      title: "First",
+      slug: "first-article",
+    });
+
+    const secondId = await createTestArticle(t, profileId, {
+      title: "Second",
+      slug: "second-article",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: secondId,
+        slug: "first-article", // Already exists
+      })
+    ).rejects.toThrow(/already exists/);
+  });
+
+  it("allows updating to same slug (self)", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "My Article",
+      slug: "my-article",
+    });
+
+    // Should not throw when updating to same slug
+    const result = await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      slug: "my-article",
+      title: "Updated Title",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("validates slug format when changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        slug: "INVALID SLUG",
+      })
+    ).rejects.toThrow(/Invalid slug format/);
+  });
+
+  it("verifies authorId if changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked",
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies tagIds if changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("can update all fields at once", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagId = await createTestTag(t, "New Tag", "new-tag");
+    const newPublishedAt = Date.now() - 86400000;
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Original",
+      slug: "original",
+    });
+
+    await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      title: "Updated Title",
+      slug: "updated-slug",
+      content: "Updated content",
+      authorId,
+      excerpt: "Updated excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://updated.substack.com/p/post",
+      publishedAt: newPublishedAt,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("Updated Title");
+    expect(article?.slug).toBe("updated-slug");
+    expect(article?.content).toBe("Updated content");
+    expect(article?.authorId).toBe(authorId);
+    expect(article?.excerpt).toBe("Updated excerpt");
+    expect(article?.tags).toEqual([tagId]);
+    expect(article?.isFeatured).toBe(true);
+    expect(article?.substackUrl).toBe("https://updated.substack.com/p/post");
+    expect(article?.publishedAt).toBe(newPublishedAt);
+  });
+});
+
+describe("articles.remove mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.mutation(api.articles.remove, { id: articleId })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      t.mutation(api.articles.remove, { id: articleId })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("throws error for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.remove, { id: deletedId })
+    ).rejects.toThrow(/Article not found/);
+  });
+
+  it("deletes article by id", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "To Delete",
+      slug: "to-delete",
+    });
+
+    const result = await adminCtx.mutation(api.articles.remove, {
+      id: articleId,
+    });
+
+    expect(result).toBeNull();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article).toBeNull();
+  });
+
+  it("returns null on successful deletion", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "To Delete",
+      slug: "to-delete",
+    });
+
+    const result = await adminCtx.mutation(api.articles.remove, {
+      id: articleId,
+    });
+
+    expect(result).toBeNull();
+  });
+});

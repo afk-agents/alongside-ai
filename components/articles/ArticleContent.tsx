@@ -130,8 +130,13 @@ const components: Components = {
   ),
 
   // Images with responsive container
+  // Note: Using <img> instead of next/image because:
+  // 1. External image URLs from markdown content may not be in next.config.js domains
+  // 2. Image dimensions are unknown from markdown content
+  // 3. Markdown rendering requires dynamic src handling
   img: ({ src, alt, ...props }) => (
     <span className="block my-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt ?? ""}
