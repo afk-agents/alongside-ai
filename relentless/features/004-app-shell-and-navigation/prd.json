@@ -146,8 +146,8 @@
         "Verify in browser: Header and Footer appear on all pages consistently"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Layout updated with Header/Footer, min-h-screen flex layout, old markup removed."
     },
     {
       "id": "US-007",

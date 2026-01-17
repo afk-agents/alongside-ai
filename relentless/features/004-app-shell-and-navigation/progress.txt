@@ -2,7 +2,7 @@
 feature: App Shell and Navigation
 started: 2026-01-16
 last_updated: 2026-01-16
-stories_completed: 5
+stories_completed: 6
 ---
 
 # Progress Log: App Shell and Navigation
@@ -173,5 +173,23 @@ stories_completed: 5
 **Learnings:**
 - Click handlers should wrap the entire clickable area, not just inner text
 - Need to mock usePathname and useConvexAuth for components using NavLink and AuthNav
+
+---
+
+## 2026-01-16 - US-006: Layout Integration
+
+**Implemented:**
+- Updated `app/layout.tsx` to import Header and Footer components
+- Removed old inline header markup and AuthNav import
+- Added flex container with min-h-screen for proper footer positioning
+- Header rendered before {children}, Footer rendered after
+- Main content area uses flex-1 to fill available space
+
+**Files Changed:**
+- app/layout.tsx (modified)
+
+**Learnings:**
+- Flex layout with min-h-screen ensures footer stays at bottom even with short content
+- flex-1 on main content pushes footer down
 
 ---
