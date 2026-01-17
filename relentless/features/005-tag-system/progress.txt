@@ -1,8 +1,8 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T04:20:00.000Z'
-stories_completed: 4
+last_updated: '2026-01-17T05:23:00.000Z'
+stories_completed: 5
 patterns: []
 ---
 
@@ -173,5 +173,38 @@ patterns: []
 - Case-insensitive sorting in JavaScript: use `a.name.toLowerCase().localeCompare(b.name.toLowerCase())`
 - Map is efficient for counting by ID - O(1) lookup and update
 - Content counting logic mirrors getContentByTagId filtering for consistency
+
+---
+
+## 2026-01-17 - US-005: TagBadge and TagList Components
+
+**Implemented:**
+- Created `TagBadge` component: clickable pill linking to `/tags/[slug]`
+  - Accepts `tag` prop with name and slug
+  - Supports `size` prop: 'sm' (text-xs, px-2, py-0.5) or 'md' (text-sm, px-3, py-1)
+  - Styled as rounded pill with gray background and hover state
+  - Uses Next.js Link component for client-side navigation
+- Created `TagList` component: renders multiple TagBadge components
+  - Accepts `tagIds` prop (array of tag IDs) and optional `size` prop
+  - Uses `useQuery(api.tags.getByIds)` to fetch tag data
+  - Renders nothing when tagIds is empty/undefined or query returns empty
+  - Horizontal flex layout with wrapping (gap-2)
+  - Skips query entirely when no tagIds provided (uses "skip" argument)
+
+**Files Changed:**
+- components/tags/TagBadge.tsx (new)
+- components/tags/TagList.tsx (new)
+- __tests__/components/tags/TagBadge.test.tsx (new)
+- __tests__/components/tags/TagList.test.tsx (new)
+
+**Tests Added (21 total):**
+- TagBadge (8 tests): correct href, displays name, rounded pill styling, small/medium size classes, special characters, long names
+- TagList (13 tests): empty states (undefined, empty array, loading), renders multiple badges, correct links, flex layout with wrapping, size prop passthrough, skip query when no tagIds
+
+**Learnings:**
+- Convex `useQuery` accepts "skip" as second argument to prevent unnecessary queries
+- Vitest requires `bun run test` (vitest run) not `bun test` for jsdom environment
+- Component tests can mock useQuery to test different data scenarios
+- TagList "use client" directive required for useQuery hook
 
 ---

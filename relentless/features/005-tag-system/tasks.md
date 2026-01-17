@@ -16,7 +16,7 @@
 **Purpose**: Create foundation for tag system - Convex functions and helper utilities
 
 - [x] T001 [P] Create `convex/tags.ts` file with imports and helper functions (generateSlug, validateSlug)
-- [ ] T002 [P] Create `components/tags/` directory structure
+- [x] T002 [P] Create `components/tags/` directory structure
 - [x] T003 [P] Create `__tests__/convex/tags.test.ts` test file skeleton
 
 **Checkpoint**: Infrastructure ready - user story implementation can begin
@@ -95,26 +95,26 @@
 
 **Acceptance Criteria:**
 - [x] `tags.getByIds` query returns tags for given IDs array
-- [ ] `TagBadge` component renders clickable pill linking to `/tags/[slug]`
-- [ ] `TagList` component renders multiple TagBadge components
-- [ ] `TagList` renders nothing when tagIds is empty or undefined
-- [ ] Tags are styled as rounded pills with hover state
-- [ ] Links use proper Next.js Link component for client-side navigation
-- [ ] Tests cover: TagBadge renders with correct href, TagList handles empty state
-- [ ] Typecheck passes
-- [ ] Lint passes
-- [ ] Tests pass
+- [x] `TagBadge` component renders clickable pill linking to `/tags/[slug]`
+- [x] `TagList` component renders multiple TagBadge components
+- [x] `TagList` renders nothing when tagIds is empty or undefined
+- [x] Tags are styled as rounded pills with hover state
+- [x] Links use proper Next.js Link component for client-side navigation
+- [x] Tests cover: TagBadge renders with correct href, TagList handles empty state
+- [x] Typecheck passes
+- [x] Lint passes
+- [x] Tests pass
 
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P1
-**Status:** in_progress
+**Status:** completed
 
 **Implementation Tasks:**
 - [x] T014 [US-003] Write tests for `tags.getByIds` query
 - [x] T015 [US-003] Implement `tags.getByIds` query
-- [ ] T016 [P] [US-003] Create `TagBadge` component with tests
-- [ ] T017 [US-003] Create `TagList` component with tests
+- [x] T016 [P] [US-003] Create `TagBadge` component with tests
+- [x] T017 [US-003] Create `TagList` component with tests
 
 ---
 
