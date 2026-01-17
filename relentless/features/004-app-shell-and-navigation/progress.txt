@@ -1,0 +1,227 @@
+---
+feature: App Shell and Navigation
+started: 2026-01-16
+last_updated: 2026-01-16
+stories_completed: 7
+---
+
+# Progress Log: App Shell and Navigation
+
+## 2026-01-16 - Specification Created
+
+- Created feature specification with 6 user stories prioritized P1-P3
+- P1 stories: Desktop Navigation, Mobile Hamburger Menu (foundation)
+- P2 stories: Secondary Navigation (Auth State), Footer with Utility Links
+- P3 stories: Active Link Indication, Search Access Point (polish)
+- Documented 13 functional requirements
+- Defined 6 measurable success criteria
+- Made 5 assumptions to avoid clarification blockers
+- Ready for planning phase (/relentless.plan)
+
+## 2026-01-16 - Implementation Plan Created
+
+- Created technical implementation plan
+- Architecture: 4 new components (Header, Footer, MobileMenu, NavLink)
+- 10 placeholder pages for navigation targets
+- Navigation config centralized in `lib/navigation.ts`
+- Server components where possible, client only for interactivity
+- TDD approach: tests before implementation
+- Constitution compliance: PASS (all rules followed)
+- Ready for task generation (/relentless.tasks)
+
+## 2026-01-16 - Tasks Generated
+
+- Created 7 user stories with 36 implementation tasks
+- US-001: NavLink + Config (P1, foundation)
+- US-002: Desktop Header (P1, depends on US-001)
+- US-003: Mobile Menu (P1, depends on US-001, US-002)
+- US-004: Footer (P2, depends on US-001)
+- US-005: Placeholder Pages (P1, no dependencies)
+- US-006: Layout Integration (P1, depends on US-002, US-004)
+- US-007: Active Link Indication (P3, polish)
+- Parallel opportunities: US-001/US-005, all placeholder pages
+- Ready for implementation or convert to prd.json
+
+## 2026-01-16 - Quality Checklist Generated
+
+- Created comprehensive quality checklist with 83 items
+- 10 categories: Navigation Config, NavLink, Header, Mobile Menu, Footer, Placeholder Pages, Layout, Accessibility, Testing, Performance
+- 12 constitution compliance items
+- 8 gaps/edge cases identified for consideration
+- Ready for prd.json conversion: `relentless convert tasks.md`
+
+## 2026-01-16 - PRD JSON Generated
+
+- Converted tasks.md to prd.json for Relentless autonomous execution
+- 7 user stories ordered by dependency:
+  1. US-001: NavLink + Config (priority 1, no deps)
+  2. US-005: Placeholder Pages (priority 2, no deps)
+  3. US-002: Desktop Header (priority 3, depends on US-001)
+  4. US-004: Footer (priority 4, depends on US-001)
+  5. US-003: Mobile Menu (priority 5, depends on US-001, US-002)
+  6. US-006: Layout Integration (priority 6, depends on US-002, US-004)
+  7. US-007: Active Link Indication (priority 7, depends on US-001, US-002, US-003)
+- All stories have: Typecheck passes, Lint passes, Tests pass
+- UI stories have: Verify in browser
+- Ready for autonomous execution: `relentless run --feature 004-app-shell-and-navigation`
+
+## 2026-01-16 - US-001: Navigation Configuration and NavLink Component
+
+**Implemented:**
+- Created `lib/navigation.ts` with PRIMARY_NAV (6 links), FOOTER_NAV (4 links), SOCIAL_LINKS (2 links)
+- All navigation arrays use `as const` for type narrowing
+- Created `components/layout/NavLink.tsx` as client component
+- NavLink uses `usePathname()` for route detection
+- Active state detection for exact matches and nested routes
+- Home link (/) only matches exactly, not all routes
+
+**Files Changed:**
+- lib/navigation.ts (new)
+- components/layout/NavLink.tsx (new)
+- __tests__/components/layout/NavLink.test.tsx (new)
+
+**Learnings:**
+- Use `bun run test` (vitest) instead of `bun test` for proper jsdom environment
+- Home route needs special handling to avoid matching all routes
+- NavLink pattern: combine className + activeClassName when active
+
+---
+
+## 2026-01-16 - US-005: Placeholder Pages
+
+**Implemented:**
+- Created 10 placeholder pages for all navigation targets
+- All pages are server components (no 'use client')
+- Consistent styling: centered layout with heading + "Coming Soon" message
+- Pages: events, lab, learn, blog, about, search, contact, privacy, terms, faq
+
+**Files Changed:**
+- app/events/page.tsx (new)
+- app/lab/page.tsx (new)
+- app/learn/page.tsx (new)
+- app/blog/page.tsx (new)
+- app/about/page.tsx (new)
+- app/search/page.tsx (new)
+- app/contact/page.tsx (new)
+- app/privacy/page.tsx (new)
+- app/terms/page.tsx (new)
+- app/faq/page.tsx (new)
+
+**Learnings:**
+- Simple placeholder pages don't need tests - they're server components with static content
+- Consistent styling across all placeholders makes future replacement easier
+
+---
+
+## 2026-01-16 - US-002: Desktop Header Navigation
+
+**Implemented:**
+- Created `components/layout/Header.tsx` as client component
+- Header renders semantic `<header>` element with logo linking to /
+- Desktop nav displays all 6 primary links using NavLink component
+- Responsive behavior: `hidden md:flex` for desktop visibility
+- Search icon links to /search
+- Integrates existing AuthNav component
+- Hamburger button for mobile menu (`md:hidden`)
+- Created `components/layout/MobileMenu.tsx` (basic implementation, refined in US-003)
+
+**Files Changed:**
+- components/layout/Header.tsx (new)
+- components/layout/MobileMenu.tsx (new)
+- __tests__/components/layout/Header.test.tsx (new)
+
+**Learnings:**
+- Header needs to be client component for mobile menu state
+- MobileMenu was implemented ahead of schedule since Header depends on it
+- Using SVG icons inline for search and hamburger buttons
+
+---
+
+## 2026-01-16 - US-004: Footer with Utility Links
+
+**Implemented:**
+- Created `components/layout/Footer.tsx` as server component (no 'use client')
+- Footer renders semantic `<footer>` element
+- Displays 4 utility links from FOOTER_NAV config
+- Displays social links (LinkedIn, Substack) with `target="_blank"` and `rel="noopener noreferrer"`
+- Copyright notice with dynamic year
+- 9 unit tests covering all acceptance criteria
+
+**Files Changed:**
+- components/layout/Footer.tsx (new)
+- __tests__/components/layout/Footer.test.tsx (new)
+
+---
+
+## 2026-01-16 - US-003: Mobile Hamburger Menu
+
+**Implemented:**
+- Created comprehensive unit tests for MobileMenu component (14 tests)
+- Fixed navigation link click handler - moved from inner span to wrapper div
+- MobileMenu already had all features from US-002 implementation:
+  - Escape key handler
+  - Backdrop click to close
+  - Close button
+  - All primary nav links + search link
+  - AuthNav integration
+  - aria-hidden attribute on container
+
+**Files Changed:**
+- components/layout/MobileMenu.tsx (modified - fixed click handler)
+- __tests__/components/layout/MobileMenu.test.tsx (new)
+
+**Learnings:**
+- Click handlers should wrap the entire clickable area, not just inner text
+- Need to mock usePathname and useConvexAuth for components using NavLink and AuthNav
+
+---
+
+## 2026-01-16 - US-006: Layout Integration
+
+**Implemented:**
+- Updated `app/layout.tsx` to import Header and Footer components
+- Removed old inline header markup and AuthNav import
+- Added flex container with min-h-screen for proper footer positioning
+- Header rendered before {children}, Footer rendered after
+- Main content area uses flex-1 to fill available space
+
+**Files Changed:**
+- app/layout.tsx (modified)
+
+**Learnings:**
+- Flex layout with min-h-screen ensures footer stays at bottom even with short content
+- flex-1 on main content pushes footer down
+
+---
+
+## 2026-01-16 - US-007: Active Link Indication
+
+**Implemented:**
+- Added tests for active link indication in Header (3 tests)
+- Added tests for active link indication in MobileMenu (3 tests)
+- NavLink already implemented active state detection for exact and nested routes
+- Header uses `font-semibold text-gray-900` for active styling
+- MobileMenu uses `font-semibold bg-gray-100` for active styling
+
+**Files Changed:**
+- __tests__/components/layout/Header.test.tsx (modified - added active link tests)
+- __tests__/components/layout/MobileMenu.test.tsx (modified - added active link tests)
+
+**Summary:**
+- Total tests: 78
+- All quality checks pass (typecheck, lint, tests)
+
+---
+
+## 2026-01-16 - FEATURE COMPLETE
+
+All 7 user stories completed:
+1. US-001: Navigation Configuration and NavLink Component ✅
+2. US-005: Placeholder Pages ✅
+3. US-002: Desktop Header Navigation ✅
+4. US-004: Footer with Utility Links ✅
+5. US-003: Mobile Hamburger Menu ✅
+6. US-006: Layout Integration ✅
+7. US-007: Active Link Indication ✅
+
+Ready for browser verification and PR creation.

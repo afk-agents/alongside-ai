@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { AuthNav } from "@/components/auth/AuthNav";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,19 +33,11 @@ export default function RootLayout({
       >
         <ConvexAuthNextjsServerProvider>
           <ConvexClientProvider>
-            <header className="border-b border-gray-200">
-              <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                  <div className="flex-shrink-0">
-                    <Link href="/" className="text-xl font-semibold text-gray-900">
-                      Alongside AI
-                    </Link>
-                  </div>
-                  <AuthNav />
-                </div>
-              </nav>
-            </header>
-            <main>{children}</main>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
           </ConvexClientProvider>
         </ConvexAuthNextjsServerProvider>
       </body>
