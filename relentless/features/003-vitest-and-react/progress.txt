@@ -1,0 +1,230 @@
+---
+feature: Testing Infrastructure (Vitest + React Testing Library)
+started: 2026-01-16
+last_updated: 2026-01-16
+stories_completed: 6
+---
+
+# Progress Log: Testing Infrastructure
+
+## 2026-01-16 - Specification Created
+
+- Created feature specification for testing infrastructure
+- 6 user stories defined (2 P1, 2 P2, 2 P3)
+- 12 functional requirements identified
+- Next step: Create implementation plan with /relentless.plan
+
+## 2026-01-16 - Implementation Plan Created
+
+- Created technical implementation plan
+- Key technical decisions:
+  - Vitest 3.x with jsdom environment
+  - Test files in `__tests__/` directory mirroring source structure
+  - Custom render utility with provider wrapper
+  - Convex hooks mocked via vi.mock
+- 5 implementation phases defined
+- Dependencies identified: vitest, @testing-library/react, @testing-library/jest-dom, @testing-library/user-event, jsdom
+- Constitution compliance verified: PASS
+- Next step: Generate user stories with /relentless.tasks
+
+## 2026-01-16 - US-001 Complete
+
+**Implemented:**
+- Installed all testing dependencies as dev dependencies
+- Added test scripts to package.json: `test`, `test:watch`, `test:coverage`
+
+**Files Changed:**
+- `package.json` - Added devDependencies and test scripts
+
+**Installed Packages:**
+- vitest@4.0.17
+- @vitejs/plugin-react@5.1.2
+- @testing-library/react@16.3.1
+- @testing-library/jest-dom@6.9.1
+- @testing-library/user-event@14.6.1
+- jsdom@27.4.0
+- @vitest/coverage-v8@4.0.17
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- bun install: PASS
+
+**Learnings:**
+- Latest Vitest is v4.x (plan mentioned v3.x)
+- All packages installed successfully with Bun
+- No type errors introduced by dependencies
+
+---
+
+## 2026-01-16 - US-002 Complete
+
+**Implemented:**
+- Created vitest.config.ts with React plugin and jsdom environment
+- Created vitest.setup.ts with jest-dom matchers and automatic cleanup
+- Added Vitest type references to tsconfig.json for global API
+- Configured path alias resolution (`@/*`) matching tsconfig
+- Added `passWithNoTests: true` for clean initial setup experience
+
+**Files Changed:**
+- `vitest.config.ts` - NEW: Vitest configuration
+- `vitest.setup.ts` - NEW: Test setup with jest-dom
+- `tsconfig.json` - Added vitest/globals types
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (exits 0 with no tests)
+
+**Learnings:**
+- `bun test` uses Bun's built-in test runner; use `bun run test` for vitest
+- `passWithNoTests: true` prevents exit code 1 when no test files exist
+- Path alias config uses `path.resolve(__dirname, './')` for proper resolution
+
+---
+
+## 2026-01-16 - US-003 Complete
+
+**Implemented:**
+- Created `__tests__/` directory structure (lib, setup/mocks, components/auth)
+- Created sample utility function `lib/example.ts` (formatDisplayName)
+- Created sample test `__tests__/lib/example.test.ts` with 5 test cases
+- Tests use describe/it/expect global API
+- Tests import using path alias `@/lib/example`
+
+**Files Changed:**
+- `lib/example.ts` - NEW: Sample utility function
+- `__tests__/lib/example.test.ts` - NEW: Sample utility tests
+
+**Test Results:**
+- 5 tests passing
+- All test cases run independently
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (5 tests)
+
+**Learnings:**
+- Vitest globals work correctly with tsconfig types configured
+- Path alias resolution working as expected in test files
+
+---
+
+## 2026-01-16 - US-004 Complete
+
+**Implemented:**
+- Created custom test utilities `__tests__/setup/test-utils.tsx` with custom render
+- Created Convex mock utilities `__tests__/setup/mocks/convex.ts`
+- Created SignOutButton test `__tests__/components/auth/SignOutButton.test.tsx`
+- Tests mock Next.js router (useRouter, push)
+- Tests mock Convex auth hooks (useAuthActions, signOut)
+- Tests cover: render, click events, loading state, error handling
+
+**Files Changed:**
+- `__tests__/setup/test-utils.tsx` - NEW: Custom render with providers
+- `__tests__/setup/mocks/convex.ts` - NEW: Convex mock utilities
+- `__tests__/components/auth/SignOutButton.test.tsx` - NEW: Component tests
+
+**Test Results:**
+- 4 component tests passing
+- 9 total tests (5 utility + 4 component)
+- userEvent simulations working correctly
+- waitFor async assertions working
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test`: PASS (9 tests)
+
+**Learnings:**
+- vi.mock hoisting works correctly at module level
+- userEvent.setup() required for async user interactions
+- waitFor needed for async state changes in React components
+
+---
+
+## 2026-01-16 - US-005 Complete
+
+**Implemented:**
+- Verified `bun run test:watch` starts Vitest in watch mode
+- Watch mode runs all tests on startup and waits for file changes
+- File change detection is intrinsic Vitest behavior (verified working)
+
+**Verification:**
+- Watch mode starts correctly via `bun run test:watch`
+- Test output shows all 9 tests passing
+- Vitest displays clear output with test file patterns
+- Exit with Ctrl+C supported (standard Vitest behavior)
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+
+**Learnings:**
+- No additional configuration needed for watch mode
+- Vitest handles file watching automatically with sensible defaults
+- `bun run test:watch` maps to `vitest` (without `run` flag for persistent mode)
+
+---
+
+## 2026-01-16 - US-006 Complete
+
+**Implemented:**
+- Verified coverage configuration in vitest.config.ts (v8 provider)
+- Coverage report generates with `bun run test:coverage`
+- Added coverage/ to ESLint global ignores
+
+**Coverage Report:**
+- Shows line, function, branch coverage percentages
+- HTML report generated in `coverage/` directory
+- Includes app/, components/, lib/ directories
+- Excludes convex/_generated/, *.d.ts, *.test.* files
+- SignOutButton.tsx: 100% coverage
+- lib/example.ts: 100% coverage
+
+**Files Changed:**
+- `eslint.config.mjs` - Added coverage/** to global ignores
+
+**Quality Checks:**
+- TypeScript typecheck: PASS
+- ESLint: PASS
+- `bun run test:coverage`: PASS
+
+**Learnings:**
+- Coverage was already configured in vitest.config.ts from US-002
+- coverage/ was already in .gitignore (Next.js default)
+- ESLint needed coverage/** added to global ignores to avoid lint warnings on generated files
+
+---
+
+## 2026-01-16 - Feature Complete
+
+**Summary:**
+All 6 user stories completed successfully:
+- US-001: Install Testing Dependencies ✓
+- US-002: Configure Vitest ✓
+- US-003: Test Utility Functions ✓
+- US-004: Test React Components ✓
+- US-005: Watch Mode for Development ✓
+- US-006: Coverage Reporting ✓
+
+**Test Infrastructure:**
+- 9 tests (5 utility + 4 component)
+- 100% coverage on tested files
+- Watch mode working
+- Coverage reporting working
+
+**Files Created/Modified:**
+- package.json (test scripts, devDependencies)
+- vitest.config.ts
+- vitest.setup.ts
+- tsconfig.json (vitest/globals types)
+- eslint.config.mjs (coverage ignores)
+- lib/example.ts
+- __tests__/lib/example.test.ts
+- __tests__/setup/test-utils.tsx
+- __tests__/setup/mocks/convex.ts
+- __tests__/components/auth/SignOutButton.test.tsx
+
+---

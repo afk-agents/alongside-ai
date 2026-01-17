@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated Convex files:
     "convex/_generated/**",
+    // Test coverage reports:
+    "coverage/**",
   ]),
 ]);
 
