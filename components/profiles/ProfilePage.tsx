@@ -1,5 +1,10 @@
+"use client";
+
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { ProfilePhoto } from "./ProfilePhoto";
 import { SocialLinks } from "./SocialLinks";
+import { AuthoredContent } from "./AuthoredContent";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface ProfilePageProps {
@@ -27,6 +32,7 @@ interface ProfilePageProps {
 
 export function ProfilePage({ profile }: ProfilePageProps) {
   const {
+    _id: profileId,
     displayName,
     bio,
     photoUrl,
@@ -35,6 +41,10 @@ export function ProfilePage({ profile }: ProfilePageProps) {
     workingOnNow,
     socialLinks,
   } = profile;
+
+  const authoredContent = useQuery(api.profiles.getAuthoredContent, {
+    profileId,
+  });
 
   return (
     <article className="max-w-3xl mx-auto px-4 py-12">
@@ -128,6 +138,13 @@ export function ProfilePage({ profile }: ProfilePageProps) {
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
             {workingOnNow}
           </p>
+        </section>
+      )}
+
+      {/* Authored Content */}
+      {authoredContent && (
+        <section className="mb-8">
+          <AuthoredContent content={authoredContent} />
         </section>
       )}
     </article>
