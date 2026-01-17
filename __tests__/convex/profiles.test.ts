@@ -1,0 +1,365 @@
+import { describe, it, expect } from "vitest";
+import { convexTest } from "convex-test";
+import { api } from "@/convex/_generated/api";
+import schema from "@/convex/schema";
+
+describe("profiles.getFounders query", () => {
+  it("returns empty array when no profiles exist", async () => {
+    const t = convexTest(schema);
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toEqual([]);
+  });
+
+  it("returns profiles with role=admin and profileStatus=published", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      // Create admin with published status (should be returned)
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Founder One",
+        slug: "founder-one",
+      });
+    });
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toHaveLength(1);
+    expect(founders[0].displayName).toBe("Founder One");
+    expect(founders[0].role).toBe("admin");
+    expect(founders[0].profileStatus).toBe("published");
+  });
+
+  it("excludes profiles with role=admin but profileStatus!=published", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId1 = await ctx.db.insert("users", {});
+      const userId2 = await ctx.db.insert("users", {});
+      const userId3 = await ctx.db.insert("users", {});
+
+      // Admin with locked status (should NOT be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId1,
+        role: "admin",
+        profileStatus: "locked",
+        displayName: "Locked Admin",
+      });
+
+      // Admin with unlocked status (should NOT be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId2,
+        role: "admin",
+        profileStatus: "unlocked",
+        displayName: "Unlocked Admin",
+      });
+
+      // Admin with published status (should be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId3,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Published Admin",
+      });
+    });
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toHaveLength(1);
+    expect(founders[0].displayName).toBe("Published Admin");
+  });
+
+  it("excludes profiles with role!=admin even if published", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId1 = await ctx.db.insert("users", {});
+      const userId2 = await ctx.db.insert("users", {});
+      const userId3 = await ctx.db.insert("users", {});
+
+      // Member with published status (should NOT be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId1,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Published Member",
+      });
+
+      // Guest with published status (should NOT be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId2,
+        role: "guest",
+        profileStatus: "published",
+        displayName: "Published Guest",
+      });
+
+      // Admin with published status (should be returned)
+      await ctx.db.insert("profiles", {
+        userId: userId3,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Published Admin",
+      });
+    });
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toHaveLength(1);
+    expect(founders[0].displayName).toBe("Published Admin");
+  });
+
+  it("returns multiple founders sorted by creation time descending", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId1 = await ctx.db.insert("users", {});
+      const userId2 = await ctx.db.insert("users", {});
+
+      // First founder created
+      await ctx.db.insert("profiles", {
+        userId: userId1,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "First Founder",
+      });
+
+      // Second founder created
+      await ctx.db.insert("profiles", {
+        userId: userId2,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Second Founder",
+      });
+    });
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toHaveLength(2);
+    // Most recent first
+    expect(founders[0].displayName).toBe("Second Founder");
+    expect(founders[1].displayName).toBe("First Founder");
+  });
+
+  it("returns complete profile data including all optional fields", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Complete Profile",
+        bio: "A full bio here",
+        photoUrl: "https://example.com/photo.jpg",
+        socialLinks: {
+          linkedin: "https://linkedin.com/in/test",
+          twitter: "https://twitter.com/test",
+          github: "https://github.com/test",
+          website: "https://example.com",
+        },
+        workingOnNow: "Building something cool",
+        skills: ["TypeScript", "React", "Convex"],
+        location: "San Francisco, CA",
+        slug: "complete-profile",
+      });
+    });
+
+    const founders = await t.query(api.profiles.getFounders, {});
+
+    expect(founders).toHaveLength(1);
+    const founder = founders[0];
+
+    expect(founder.displayName).toBe("Complete Profile");
+    expect(founder.bio).toBe("A full bio here");
+    expect(founder.photoUrl).toBe("https://example.com/photo.jpg");
+    expect(founder.socialLinks).toEqual({
+      linkedin: "https://linkedin.com/in/test",
+      twitter: "https://twitter.com/test",
+      github: "https://github.com/test",
+      website: "https://example.com",
+    });
+    expect(founder.workingOnNow).toBe("Building something cool");
+    expect(founder.skills).toEqual(["TypeScript", "React", "Convex"]);
+    expect(founder.location).toBe("San Francisco, CA");
+    expect(founder.slug).toBe("complete-profile");
+  });
+});
+
+describe("profiles.getBySlug query", () => {
+  it("returns profile when slug exists and profile is published", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Test User",
+        slug: "test-user",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, { slug: "test-user" });
+
+    expect(profile).not.toBeNull();
+    expect(profile?._id).toBe(profileId);
+    expect(profile?.displayName).toBe("Test User");
+    expect(profile?.slug).toBe("test-user");
+  });
+
+  it("returns null when slug does not exist", async () => {
+    const t = convexTest(schema);
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "nonexistent",
+    });
+
+    expect(profile).toBeNull();
+  });
+
+  it("returns null when profile exists but is not published", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "unlocked",
+        displayName: "Unlocked Profile",
+        slug: "unlocked-profile",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "unlocked-profile",
+    });
+
+    expect(profile).toBeNull();
+  });
+
+  it("returns null when profile is locked", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "locked",
+        displayName: "Locked Profile",
+        slug: "locked-profile",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "locked-profile",
+    });
+
+    expect(profile).toBeNull();
+  });
+
+  it("returns member profile when published", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Published Member",
+        slug: "published-member",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "published-member",
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?.displayName).toBe("Published Member");
+    expect(profile?.role).toBe("member");
+  });
+
+  it("returns complete profile data", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Full Profile",
+        bio: "Detailed bio here",
+        photoUrl: "https://example.com/photo.jpg",
+        socialLinks: {
+          linkedin: "https://linkedin.com/in/fullprofile",
+          github: "https://github.com/fullprofile",
+        },
+        workingOnNow: "Current project",
+        skills: ["JavaScript", "Python"],
+        location: "New York, NY",
+        slug: "full-profile",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "full-profile",
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?.displayName).toBe("Full Profile");
+    expect(profile?.bio).toBe("Detailed bio here");
+    expect(profile?.photoUrl).toBe("https://example.com/photo.jpg");
+    expect(profile?.socialLinks?.linkedin).toBe(
+      "https://linkedin.com/in/fullprofile"
+    );
+    expect(profile?.socialLinks?.github).toBe(
+      "https://github.com/fullprofile"
+    );
+    expect(profile?.workingOnNow).toBe("Current project");
+    expect(profile?.skills).toEqual(["JavaScript", "Python"]);
+    expect(profile?.location).toBe("New York, NY");
+  });
+
+  it("handles profile without optional fields", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        slug: "minimal-profile",
+      });
+    });
+
+    const profile = await t.query(api.profiles.getBySlug, {
+      slug: "minimal-profile",
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?.slug).toBe("minimal-profile");
+    expect(profile?.displayName).toBeUndefined();
+    expect(profile?.bio).toBeUndefined();
+    expect(profile?.socialLinks).toBeUndefined();
+  });
+});
