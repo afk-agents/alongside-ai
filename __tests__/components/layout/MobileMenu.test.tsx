@@ -142,4 +142,27 @@ describe("MobileMenu", () => {
       expect(closeButton).not.toHaveAttribute("tabIndex", "-1");
     });
   });
+
+  describe("active link indication", () => {
+    it("shows active styling on current page link", () => {
+      mockUsePathname.mockReturnValue("/events");
+      render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+      const eventsLink = screen.getByRole("link", { name: /^events$/i });
+      expect(eventsLink).toHaveClass("font-semibold");
+    });
+
+    it("does not show active styling on non-current page links", () => {
+      mockUsePathname.mockReturnValue("/events");
+      render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+      const blogLink = screen.getByRole("link", { name: /^blog$/i });
+      expect(blogLink).not.toHaveClass("font-semibold");
+    });
+
+    it("shows active styling for nested routes", () => {
+      mockUsePathname.mockReturnValue("/events/123");
+      render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+      const eventsLink = screen.getByRole("link", { name: /^events$/i });
+      expect(eventsLink).toHaveClass("font-semibold");
+    });
+  });
 });

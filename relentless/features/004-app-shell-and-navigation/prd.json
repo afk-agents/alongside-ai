@@ -167,8 +167,8 @@
         "Verify in browser: active link visually distinct on each page"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Added active link tests to Header and MobileMenu. NavLink already had full implementation."
     }
   ]
 }
