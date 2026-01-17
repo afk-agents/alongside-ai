@@ -730,3 +730,136 @@ export const remove = mutation({
     return null;
   },
 });
+
+// ============================================================================
+// Related Articles Query
+// ============================================================================
+
+/**
+ * Related article item validator.
+ */
+const relatedArticleValidator = v.object({
+  _id: v.id("articles"),
+  title: v.string(),
+  slug: v.string(),
+  excerpt: v.optional(v.string()),
+  publishedAt: v.number(),
+  sharedTagCount: v.number(),
+});
+
+/**
+ * Get related articles based on shared tags.
+ *
+ * Returns articles sharing at least one tag with the specified article,
+ * sorted by number of shared tags (descending), then by publishedAt (descending).
+ *
+ * If no shared-tag articles are found, falls back to articles by the same author.
+ * If no related articles exist at all, returns an empty array.
+ *
+ * @param articleId - The article to find related content for
+ * @param limit - Maximum related articles to return (default 3)
+ *
+ * @returns Array of related articles with sharedTagCount
+ */
+export const getRelated = query({
+  args: {
+    articleId: v.id("articles"),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(relatedArticleValidator),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 3;
+
+    // Fetch the current article
+    const currentArticle = await ctx.db.get(args.articleId);
+    if (!currentArticle) {
+      return [];
+    }
+
+    const currentTags = currentArticle.tags ?? [];
+    const currentTagSet = new Set(currentTags.map((id) => id.toString()));
+
+    // If the article has tags, find articles sharing at least one tag
+    if (currentTags.length > 0) {
+      // Query recent articles (limit to 50 for performance)
+      const allArticles = await ctx.db
+        .query("articles")
+        .withIndex("by_publishedAt")
+        .order("desc")
+        .take(50);
+
+      // Find articles with shared tags, excluding current article
+      const relatedArticles: Array<{
+        _id: Id<"articles">;
+        title: string;
+        slug: string;
+        excerpt?: string;
+        publishedAt: number;
+        sharedTagCount: number;
+      }> = [];
+
+      for (const article of allArticles) {
+        // Skip current article
+        if (article._id === args.articleId) {
+          continue;
+        }
+
+        const articleTags = article.tags ?? [];
+        // Count shared tags
+        let sharedTagCount = 0;
+        for (const tagId of articleTags) {
+          if (currentTagSet.has(tagId.toString())) {
+            sharedTagCount++;
+          }
+        }
+
+        // Only include if there's at least one shared tag
+        if (sharedTagCount > 0) {
+          relatedArticles.push({
+            _id: article._id,
+            title: article.title,
+            slug: article.slug,
+            excerpt: article.excerpt,
+            publishedAt: article.publishedAt,
+            sharedTagCount,
+          });
+        }
+      }
+
+      // If we found related articles by tag, sort and return
+      if (relatedArticles.length > 0) {
+        // Sort by sharedTagCount desc, then publishedAt desc
+        relatedArticles.sort((a, b) => {
+          if (b.sharedTagCount !== a.sharedTagCount) {
+            return b.sharedTagCount - a.sharedTagCount;
+          }
+          return b.publishedAt - a.publishedAt;
+        });
+
+        return relatedArticles.slice(0, limit);
+      }
+    }
+
+    // Fallback: get articles by the same author (excluding current article)
+    const authorArticles = await ctx.db
+      .query("articles")
+      .withIndex("by_authorId", (q) => q.eq("authorId", currentArticle.authorId))
+      .collect();
+
+    // Filter out current article and sort by publishedAt desc
+    const otherAuthorArticles = authorArticles
+      .filter((article) => article._id !== args.articleId)
+      .sort((a, b) => b.publishedAt - a.publishedAt)
+      .slice(0, limit);
+
+    // Map to result format with sharedTagCount = 0
+    return otherAuthorArticles.map((article) => ({
+      _id: article._id,
+      title: article.title,
+      slug: article.slug,
+      excerpt: article.excerpt,
+      publishedAt: article.publishedAt,
+      sharedTagCount: 0,
+    }));
+  },
+});

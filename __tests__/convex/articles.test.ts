@@ -1529,3 +1529,397 @@ describe("articles.remove mutation", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("articles.getRelated query", () => {
+  it("falls back to same author articles when current article has no tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create article without tags
+    const articleId = await createTestArticle(t, profileId, {
+      title: "No Tags Article",
+      slug: "no-tags-article",
+    });
+
+    // Create another article by same author (should be returned as fallback)
+    await createTestArticle(t, profileId, {
+      title: "Other Article",
+      slug: "other-article",
+    });
+
+    const result = await t.query(api.articles.getRelated, { articleId });
+
+    // Should fall back to same-author articles since current has no tags
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Other Article");
+    expect(result[0].sharedTagCount).toBe(0); // Fallback doesn't share tags
+  });
+
+  it("returns articles with shared tags, excluding current article", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Related article with AI tag (should be returned)
+    await createTestArticle(t, profileId, {
+      title: "Related AI Article",
+      slug: "related-ai-article",
+      tags: [tagAI],
+    });
+
+    // Unrelated article with only ML tag (should not be returned)
+    await createTestArticle(t, profileId, {
+      title: "ML Only Article",
+      slug: "ml-only-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Related AI Article");
+    // Should not include current article
+    const titles = result.map((a) => a.title);
+    expect(titles).not.toContain("Current Article");
+  });
+
+  it("sorts by shared tag count descending, then by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+    const tagData = await createTestTag(t, "Data", "data");
+
+    const now = Date.now();
+
+    // Current article with AI, ML, and Data tags
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI, tagML, tagData],
+      publishedAt: now,
+    });
+
+    // Article with 3 shared tags (most relevant)
+    await createTestArticle(t, profileId, {
+      title: "Three Tags Article",
+      slug: "three-tags-article",
+      tags: [tagAI, tagML, tagData],
+      publishedAt: now - 30000, // Older
+    });
+
+    // Article with 2 shared tags (second most relevant)
+    await createTestArticle(t, profileId, {
+      title: "Two Tags Article",
+      slug: "two-tags-article",
+      tags: [tagAI, tagML],
+      publishedAt: now - 10000, // Newer than three tags
+    });
+
+    // Article with 1 shared tag (least relevant)
+    await createTestArticle(t, profileId, {
+      title: "One Tag Article",
+      slug: "one-tag-article",
+      tags: [tagAI],
+      publishedAt: now - 5000, // Even newer
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(3);
+    // Sorted by shared tag count descending
+    expect(result[0].title).toBe("Three Tags Article");
+    expect(result[0].sharedTagCount).toBe(3);
+    expect(result[1].title).toBe("Two Tags Article");
+    expect(result[1].sharedTagCount).toBe(2);
+    expect(result[2].title).toBe("One Tag Article");
+    expect(result[2].sharedTagCount).toBe(1);
+  });
+
+  it("secondary sorts by publishedAt when sharedTagCount is equal", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    const now = Date.now();
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+      publishedAt: now,
+    });
+
+    // Same tag count but older
+    await createTestArticle(t, profileId, {
+      title: "Older Article",
+      slug: "older-article",
+      tags: [tagAI],
+      publishedAt: now - 86400000, // 1 day ago
+    });
+
+    // Same tag count but newer
+    await createTestArticle(t, profileId, {
+      title: "Newer Article",
+      slug: "newer-article",
+      tags: [tagAI],
+      publishedAt: now - 3600000, // 1 hour ago
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(2);
+    // Both have 1 shared tag, so sorted by publishedAt descending
+    expect(result[0].title).toBe("Newer Article");
+    expect(result[1].title).toBe("Older Article");
+  });
+
+  it("defaults to limit of 3", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Create 5 related articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Related ${i}`,
+        slug: `related-${i}`,
+        tags: [tagAI],
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(3);
+  });
+
+  it("respects custom limit parameter", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Create 5 related articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Related ${i}`,
+        slug: `related-${i}`,
+        tags: [tagAI],
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+      limit: 2,
+    });
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("falls back to same author articles when no shared tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create a second author
+    const secondAuthorId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Second Author",
+        slug: "second-author",
+      });
+    });
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Other article by same author with different tag (fallback candidate)
+    await createTestArticle(t, profileId, {
+      title: "Same Author Article",
+      slug: "same-author-article",
+      tags: [tagML],
+    });
+
+    // Article by different author with ML tag (should not be fallback)
+    await createTestArticle(t, secondAuthorId, {
+      title: "Different Author Article",
+      slug: "different-author-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Same Author Article");
+  });
+
+  it("returns empty array when no related articles and no same-author articles", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create a second author
+    const secondAuthorId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Second Author",
+        slug: "second-author",
+      });
+    });
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag - only article by this author
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Article by different author with different tag
+    await createTestArticle(t, secondAuthorId, {
+      title: "Unrelated Article",
+      slug: "unrelated-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns correct shape with expected fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    const now = Date.now();
+
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    await createTestArticle(t, profileId, {
+      title: "Related Article",
+      slug: "related-article",
+      excerpt: "Test excerpt",
+      tags: [tagAI],
+      publishedAt: now - 1000,
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    const article = result[0];
+
+    expect(article).toHaveProperty("_id");
+    expect(article).toHaveProperty("title", "Related Article");
+    expect(article).toHaveProperty("slug", "related-article");
+    expect(article).toHaveProperty("excerpt", "Test excerpt");
+    expect(article).toHaveProperty("publishedAt");
+    expect(article).toHaveProperty("sharedTagCount", 1);
+  });
+
+  it("handles article not found gracefully", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create and delete an article to get a valid but non-existent ID
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: deletedId,
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("excludes current article even when it would match by shared tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Only one article with the tag (the current one)
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    // Should be empty since the only article with the tag is the current one
+    expect(result).toEqual([]);
+  });
+});
