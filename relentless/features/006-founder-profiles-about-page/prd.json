@@ -1,0 +1,258 @@
+{
+  "project": "Alongside AI",
+  "branchName": "relentless/006-founder-profiles-about-page",
+  "description": "Founder Profiles & About Page - Transform placeholder About page into comprehensive introduction with mission, values, and founder bios. Founder profiles serve as template for future member profiles.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Schema Update - Add Profile Slug and Indexes",
+      "description": "As a developer, I need the profiles table to include a slug field for URL routing and composite indexes for efficient queries.",
+      "acceptanceCriteria": [
+        "Add slug: v.optional(v.string()) to profiles table in convex/schema.ts",
+        "Add photoStorageId: v.optional(v.id('_storage')) to profiles table",
+        "Add .index('by_slug', ['slug']) for URL routing lookups",
+        "Add .index('by_role_and_profileStatus', ['role', 'profileStatus']) for founders query",
+        "Run bunx convex dev and verify schema deploys without errors",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Added slug and photoStorageId fields, by_slug and by_role_and_profileStatus indexes to profiles table. Schema deployed successfully."
+    },
+    {
+      "id": "US-002",
+      "title": "Profile Queries - getFounders and getBySlug",
+      "description": "As a frontend developer, I need Convex queries to fetch published admin profiles (founders) and individual profiles by slug.",
+      "acceptanceCriteria": [
+        "Create convex/profiles.ts with necessary imports",
+        "Implement getFounders query returning profiles with role='admin' AND profileStatus='published' using composite index",
+        "Implement getBySlug query accepting slug argument, using by_slug index",
+        "getBySlug returns null for non-existent slugs or non-published profiles",
+        "Both queries have proper TypeScript return type validators",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created convex/profiles.ts with getFounders (uses by_role_and_profileStatus index) and getBySlug (uses by_slug index) queries. Both have proper validators and tests (13 passing tests)."
+    },
+    {
+      "id": "US-003",
+      "title": "ProfilePhoto Component with Fallback Avatar",
+      "description": "As a frontend developer, I need a ProfilePhoto component that displays images or initials avatars.",
+      "acceptanceCriteria": [
+        "Create components/profiles/ProfilePhoto.tsx",
+        "Display image when photoUrl is provided using Next.js Image component",
+        "Display initials avatar when photoUrl missing but displayName exists",
+        "Display generic placeholder when both missing",
+        "Support size variants: sm, md, lg, xl with Tailwind classes",
+        "Handle image loading errors gracefully",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created ProfilePhoto component with Next.js Image for photos, initials fallback, generic placeholder, size variants (sm/md/lg/xl), and image error handling. 18 passing tests."
+    },
+    {
+      "id": "US-004",
+      "title": "SocialLinks Component",
+      "description": "As a frontend developer, I need a SocialLinks component displaying icons for social platforms.",
+      "acceptanceCriteria": [
+        "Create components/profiles/SocialLinks.tsx",
+        "Display icons for linkedin, twitter, github, website when URLs provided",
+        "Hide component entirely when no links provided",
+        "Open links in new tab with rel='noopener noreferrer'",
+        "Support optional text labels for accessibility",
+        "Add proper aria-labels for each icon",
+        "Create components/profiles/index.ts barrel file exporting components",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created SocialLinks component with linkedin/twitter/github/website icons, security attributes, accessibility labels, optional text labels, and barrel file. 19 passing tests."
+    },
+    {
+      "id": "US-005",
+      "title": "ProfileCard Component for About Page",
+      "description": "As a visitor on the About page, I want to see compact profile cards for each founder.",
+      "acceptanceCriteria": [
+        "Create components/profiles/ProfileCard.tsx",
+        "Display ProfilePhoto, displayName, bio excerpt, and SocialLinks",
+        "Truncate bio with ellipsis after 2-3 lines using line-clamp",
+        "Card links to /profiles/[slug]",
+        "Add hover state for interactivity",
+        "Responsive design adapting to container width",
+        "Support showViewProfile prop for optional link",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created ProfileCard component with ProfilePhoto, displayName (as link), bio excerpt with line-clamp-3, SocialLinks, hover shadow, and optional View Profile link. 19 passing tests."
+    },
+    {
+      "id": "US-006",
+      "title": "Mission and Values Sections",
+      "description": "As a visitor, I want to see Alongside AI's mission statement and core values on the About page.",
+      "acceptanceCriteria": [
+        "Create components/about/MissionSection.tsx with headline and mission paragraph",
+        "Add visual accent styling (gradient background or styling)",
+        "Create components/about/ValuesSection.tsx with 'Our Values' heading",
+        "Display 4 value cards: Community First, Practical Knowledge, Inclusive Access, Continuous Growth",
+        "Responsive grid: 1 col mobile, 2 col tablet, 4 col desktop",
+        "Create components/about/index.ts barrel file",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created MissionSection with gradient styling and ValuesSection with 4 value cards in responsive grid. SVG icons for each value, barrel file created. 14 passing tests."
+    },
+    {
+      "id": "US-007",
+      "title": "Founder Section with Dynamic Data",
+      "description": "As a visitor on the About page, I want to see profile cards for the founders fetched from the database.",
+      "acceptanceCriteria": [
+        "Create components/about/FounderSection.tsx using useQuery with api.profiles.getFounders",
+        "Display 'Meet the Founders' heading",
+        "Map founders to ProfileCard components in responsive grid",
+        "Implement loading skeleton state while fetching",
+        "Handle empty array with 'Coming soon' message",
+        "Update app/about/page.tsx composing MissionSection, ValuesSection, FounderSection",
+        "Remove placeholder content from About page",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created FounderSection with useQuery, loading skeleton, empty state, and responsive grid. Updated About page composing all sections. 8 passing tests."
+    },
+    {
+      "id": "US-008",
+      "title": "Individual Profile Page Route",
+      "description": "As a visitor, I want to view a founder's full profile page at /profiles/[slug].",
+      "acceptanceCriteria": [
+        "Create app/profiles/[slug]/page.tsx extracting slug from params",
+        "Fetch profile using useQuery with api.profiles.getBySlug",
+        "Create components/profiles/ProfilePage.tsx with full profile layout",
+        "Display: photo (xl), displayName as h1, full bio, location, skills as tags, workingOnNow, SocialLinks",
+        "Handle loading state",
+        "Create app/profiles/[slug]/not-found.tsx for 404 cases",
+        "Show 404 when profile is null (not found or not published)",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created ProfilePage component with full layout (photo xl, h1 name, bio, location, skills, workingOnNow, SocialLinks). Created route with loading skeleton and not-found page. 14 passing tests."
+    },
+    {
+      "id": "US-009",
+      "title": "Admin Update Mutation for Profiles",
+      "description": "As an admin, I need a mutation to update profile fields including slug.",
+      "acceptanceCriteria": [
+        "Add update mutation to convex/profiles.ts requiring admin role",
+        "Accept profile id and optional fields: displayName, bio, slug, socialLinks, workingOnNow, skills, location, profileStatus",
+        "Validate slug format using existing validateSlug pattern",
+        "Check slug uniqueness (exclude current profile)",
+        "Patch profile with only provided fields",
+        "Return v.null() on success",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Added update mutation with admin role requirement, slug validation, uniqueness check, and selective field patching. 10 new tests."
+    },
+    {
+      "id": "US-010",
+      "title": "Admin Photo Upload Functionality",
+      "description": "As an admin, I need to upload profile photos using Convex file storage.",
+      "acceptanceCriteria": [
+        "Add generateUploadUrl mutation to convex/profiles.ts requiring admin role",
+        "Return signed upload URL from ctx.storage.generateUploadUrl()",
+        "Add getPhotoUrl query accepting storageId, returning URL from ctx.storage.getUrl()",
+        "Update ProfilePhoto component to handle both photoUrl and photoStorageId",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Added generateUploadUrl mutation (admin only) and getPhotoUrl query. Updated ProfilePhoto component to fetch URL from storage when photoStorageId provided. 4 new tests."
+    },
+    {
+      "id": "US-011",
+      "title": "Profile Authored Content Display",
+      "description": "As a visitor on a founder's profile page, I want to see content they have authored.",
+      "acceptanceCriteria": [
+        "Add getAuthoredContent query to convex/profiles.ts accepting profileId",
+        "Query published projects, experiments, articles, videos by authorId",
+        "Return grouped content with minimal fields (title, slug, type)",
+        "Create components/profiles/AuthoredContent.tsx displaying content by type",
+        "Hide empty content types",
+        "Link items to their respective pages",
+        "Integrate into ProfilePage component",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created AuthoredContent component displaying content grouped by type (projects, experiments, articles, videos). Links to respective pages, hides empty types. Integrated into ProfilePage with useQuery. 16 new tests."
+    },
+    {
+      "id": "US-012",
+      "title": "Admin Profile List Page",
+      "description": "As an admin, I need a page to view all profiles and access profile editing.",
+      "acceptanceCriteria": [
+        "Add list query to convex/profiles.ts returning all profiles (admin only)",
+        "Include id, displayName, role, profileStatus, slug in response",
+        "Create app/admin/profiles/page.tsx requiring admin authentication",
+        "Display profiles in table format with key fields",
+        "Add links to edit pages for each profile",
+        "Match existing admin page styling",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Added list query (admin only) returning all profiles with minimal fields. Created admin profiles page with table display, role/status badges, and edit links. 7 new tests."
+    },
+    {
+      "id": "US-013",
+      "title": "Admin Profile Editor Page",
+      "description": "As an admin, I need a form to edit all profile fields including photo upload.",
+      "acceptanceCriteria": [
+        "Add get query to convex/profiles.ts returning single profile by ID (admin only)",
+        "Create components/profiles/ProfileEditor.tsx with form for all fields",
+        "Include photo upload with preview functionality",
+        "Include slug input with auto-generation from displayName",
+        "Include social links grouped inputs",
+        "Include skills tag input",
+        "Include profile status select dropdown",
+        "Create app/admin/profiles/[id]/edit/page.tsx rendering ProfileEditor",
+        "Show success/error toast on save",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Added get query (admin only) with fullProfileValidator. Created ProfileEditor component with photo upload, slug generation, social links, skills input, status dropdown, and toast messages. 5 new tests for get query."
+    },
+    {
+      "id": "US-014",
+      "title": "Seed Founder Profile Data",
+      "description": "As a developer, I need to seed the database with founder profiles for David and Nathan.",
+      "acceptanceCriteria": [
+        "Create convex/seedFounders.ts with internal mutation to seed profiles",
+        "Create David profile with role='admin', profileStatus='published', slug='david'",
+        "Create Nathan profile with role='admin', profileStatus='published', slug='nathan'",
+        "Populate displayName, bio, and placeholder content for both",
+        "Seed script is idempotent (check if profiles exist before creating)",
+        "Document how to run seed in README or convex/_generated comments",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Completed 2026-01-17: Created seedFounders.ts with internal mutation. Both founders have displayName, bio, workingOnNow, skills, location, and socialLinks. Script is idempotent (checks slug before creating). Usage: npx convex run seedFounders:seed"
+    }
+  ]
+}
