@@ -1,0 +1,107 @@
+---
+feature: Tag System
+started: 2026-01-16T00:00:00.000Z
+last_updated: '2026-01-17T02:15:00.000Z'
+stories_completed: 2
+patterns: []
+---
+
+# Progress Log: Tag System
+
+## 2026-01-16 - Specification Created
+
+- Created feature specification with 7 user stories
+- Prioritized stories: P1 (view tag page, click tags), P2 (browse all tags, admin create), P3 (admin assign/edit/delete)
+- Database schema already exists in convex/schema.ts with tags table and content type references
+- No clarifications needed - made informed assumptions documented in spec
+
+## 2026-01-16 - Technical Plan Created
+
+- Created implementation plan with Convex API design
+- Defined 4 public queries: list, getBySlug, getContentByTagId, getByIds
+- Defined 3 admin mutations: create, update, remove
+- Designed 3 React components: TagBadge, TagList, TagContentSection
+- Planned 2 pages: /tags (listing) and /tags/[slug] (detail)
+- Implementation order: Admin Create Tag → View Tag Page → Click Tags → Browse All Tags → Admin Assign/Edit/Delete
+- Constitution compliance: PASS (all principles satisfied)
+
+## 2026-01-16 - Tasks Generated
+
+- Created 7 user stories with 31 total tasks
+- US-001 (Admin Creates Tag) is the foundation - all others depend on it
+- P1 stories: US-001, US-002 (View Tag Page), US-003 (Click Tags)
+- P2 stories: US-004 (Browse All Tags), US-005 (Assign Tags)
+- P3 stories: US-006 (Edit Tag), US-007 (Delete Tag)
+- Parallel opportunities identified for independent tasks
+- Ready for implementation or `/relentless.checklist`
+
+## 2026-01-16 - PRD JSON Created
+
+- Converted tasks.md to prd.json for Relentless autonomous agent
+- Split original 7 stories into 9 smaller stories for single-iteration completion:
+  - US-001: Admin Creates Tag - Backend (create mutation + helpers)
+  - US-002: Tag Queries - getBySlug and getByIds
+  - US-003: Tag Query - getContentByTagId
+  - US-004: Tag Query - list with content counts
+  - US-005: TagBadge and TagList Components
+  - US-006: Tag Detail Page
+  - US-007: Tags Listing Page
+  - US-008: Admin Update Tag Mutation
+  - US-009: Admin Delete Tag Mutation
+- Ordered by dependencies: backend queries first, then components, then pages
+- Ready to run: `relentless run --feature 005-tag-system`
+
+## 2026-01-16 - US-001: Admin Creates Tag - Backend
+
+**Implemented:**
+- Created `convex/tags.ts` with generateSlug and validateSlug helper functions
+- Implemented `tags.create` mutation with admin role enforcement via requireRole
+- Auto-generates URL-friendly slugs from tag names (lowercase, hyphens, max 50 chars)
+- Validates slug format (2-50 chars, lowercase alphanumeric with single hyphens)
+- Checks slug uniqueness using by_slug index
+- Added convex-test package for testing Convex functions
+- Updated vitest.config.ts to support edge-runtime for Convex tests
+
+**Files Changed:**
+- convex/tags.ts (new)
+- __tests__/convex/tags.test.ts (new)
+- vitest.config.ts (modified)
+- package.json (modified)
+- bun.lock (modified)
+- convex/_generated/api.d.ts (regenerated)
+
+**Tests (30 total):**
+- generateSlug: 10 tests covering case conversion, special chars, truncation
+- validateSlug: 14 tests covering format validation, length limits
+- tags.create mutation: 6 tests covering admin access, slug handling, errors
+
+**Learnings:**
+- convex-test requires vitest (not bun test) due to import.meta.glob dependency
+- Need to configure edge-runtime environment in vitest for Convex tests
+- convex-test withIdentity() sets ctx.auth.getUserIdentity() for auth testing
+- Must run `bunx convex codegen` to regenerate types after adding new functions
+
+---
+
+## 2026-01-17 - US-002: Tag Queries - getBySlug and getByIds
+
+**Implemented:**
+- Added `tags.getBySlug` query: fetches tag by slug using by_slug index, returns full tag object or null
+- Added `tags.getByIds` query: fetches multiple tags by ID array, returns array with _id, name, slug
+- Both queries are public (no auth required) for frontend use
+- getByIds gracefully handles non-existent IDs by filtering them out
+
+**Files Changed:**
+- convex/tags.ts (modified - added getBySlug and getByIds queries)
+- __tests__/convex/tags.test.ts (modified - added 7 tests)
+
+**Tests Added (7 total):**
+- getBySlug: returns tag when slug exists, returns null when slug does not exist, returns tag without description when not set
+- getByIds: returns tags for given IDs, returns empty array when no IDs provided, returns empty array when none exist, returns only existing tags when some IDs are invalid
+
+**Learnings:**
+- Convex query return types need to use v.union() for nullable returns
+- db.get() returns null for deleted/non-existent IDs (doesn't throw)
+- Promise.all with db.get is efficient for fetching multiple documents by ID
+
+---

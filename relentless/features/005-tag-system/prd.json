@@ -1,0 +1,191 @@
+{
+  "project": "Alongside AI",
+  "branchName": "005-tag-system",
+  "description": "Tag System - Unified taxonomy for cross-content discovery across events, projects, experiments, articles, and videos",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Admin Creates Tag - Backend",
+      "description": "As an admin, I want to create new tags in the system so that I can categorize content by topic.",
+      "acceptanceCriteria": [
+        "Create `convex/tags.ts` with imports and helper functions",
+        "Implement `generateSlug(name)` helper: lowercase, replace non-alphanumeric with hyphens, trim leading/trailing hyphens, max 50 chars",
+        "Implement `validateSlug(slug)` helper: returns true for valid URL-friendly slugs (lowercase, hyphens, 2-50 chars)",
+        "Implement `tags.create` mutation with args: name (required), slug (optional), description (optional)",
+        "Mutation uses `requireRole(ctx, ['admin'])` to enforce admin-only access",
+        "If slug not provided, auto-generate from name using generateSlug",
+        "Check slug uniqueness using `by_slug` index, throw error if duplicate",
+        "Return new tag ID on success",
+        "Write tests: admin creates tag, slug auto-generation, duplicate slug rejection, non-admin throws AuthorizationError",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Completed 2026-01-16. Added generateSlug, validateSlug helpers and tags.create mutation with full test coverage."
+    },
+    {
+      "id": "US-002",
+      "title": "Tag Queries - getBySlug and getByIds",
+      "description": "As a developer, I need queries to fetch tags by slug and by IDs so the frontend can display tag information.",
+      "acceptanceCriteria": [
+        "Implement `tags.getBySlug` query with args: slug (string)",
+        "Query uses `by_slug` index, returns tag object or null if not found",
+        "Return includes: _id, _creationTime, name, slug, description",
+        "Implement `tags.getByIds` query with args: tagIds (array of tag IDs)",
+        "Returns array of tags with: _id, name, slug",
+        "Returns empty array if no IDs provided or none found",
+        "Write tests for both queries: found, not found, empty array handling",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Completed 2026-01-17. Implemented getBySlug (uses by_slug index, returns tag or null) and getByIds (returns array of tags with _id, name, slug). Both queries have full test coverage."
+    },
+    {
+      "id": "US-003",
+      "title": "Tag Query - getContentByTagId",
+      "description": "As a developer, I need a query to fetch all content with a specific tag so the tag detail page can display related content.",
+      "acceptanceCriteria": [
+        "Implement `tags.getContentByTagId` query with args: tagId (ID of tags)",
+        "Query all published content types and filter by tag ID in their tags array",
+        "For events: filter where isArchived !== true, order by date desc",
+        "For projects: filter where isPublished === true, order by _creationTime desc",
+        "For experiments: filter where isPublished === true, order by _creationTime desc",
+        "For articles: order by publishedAt desc",
+        "For videos: filter where isPublished === true, order by _creationTime desc",
+        "Return object with: events, projects, experiments, articles, videos arrays",
+        "Each array item includes: _id, title, slug, plus type-specific fields",
+        "Write tests: returns correct content, filters unpublished, handles empty results",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Tag Query - list with content counts",
+      "description": "As a developer, I need a query to list all tags with content counts so the tags listing page can show tag popularity.",
+      "acceptanceCriteria": [
+        "Implement `tags.list` query with no args",
+        "Fetch all tags and sort alphabetically by name (case-insensitive)",
+        "For each tag, count total content items across all content types",
+        "Return array of objects with: _id, _creationTime, name, slug, description, contentCount",
+        "Write tests: returns sorted tags, content counts are accurate, handles no tags",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "TagBadge and TagList Components",
+      "description": "As a visitor, I want to see clickable tag badges on content items so that I can navigate to tag pages.",
+      "acceptanceCriteria": [
+        "Create `components/tags/TagBadge.tsx` component",
+        "TagBadge accepts props: tag ({ name, slug }), optional size ('sm' | 'md')",
+        "TagBadge renders Next.js Link to `/tags/[slug]`",
+        "TagBadge styled as rounded pill with hover state using Tailwind",
+        "Create `components/tags/TagList.tsx` component",
+        "TagList accepts props: tagIds (array of tag IDs), optional size",
+        "TagList uses `useQuery(api.tags.getByIds, { tagIds })` to fetch tags",
+        "TagList renders nothing if tagIds is empty/undefined or query returns empty",
+        "TagList renders TagBadge for each tag in horizontal flex layout with wrapping",
+        "Write tests: TagBadge renders correct href, TagList handles empty state, TagList renders multiple badges",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Tag Detail Page",
+      "description": "As a visitor, I want to view a tag detail page so that I can see all content related to that topic.",
+      "acceptanceCriteria": [
+        "Create `components/tags/TagContentSection.tsx` component",
+        "TagContentSection accepts: title (string), items (array), linkPrefix (string)",
+        "TagContentSection renders section with title and item count, hidden when empty",
+        "Each item links to `linkPrefix/[slug]`",
+        "Create `app/tags/[slug]/page.tsx` page",
+        "Page uses `useQuery(api.tags.getBySlug, { slug })` to fetch tag",
+        "Page uses `useQuery(api.tags.getContentByTagId, { tagId })` when tag exists",
+        "If tag is null, use Next.js notFound() to show 404",
+        "Page displays tag name as h1 title, description if present",
+        "Page renders TagContentSection for each content type with items",
+        "Empty sections are not rendered",
+        "If all sections empty, show 'No content tagged with [name] yet' message",
+        "Typecheck passes",
+        "Verify in browser: tag page displays, 404 works, sections render correctly"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Tags Listing Page",
+      "description": "As a visitor, I want to browse all available tags so that I can discover topics covered on the site.",
+      "acceptanceCriteria": [
+        "Create `app/tags/page.tsx` page",
+        "Page uses `useQuery(api.tags.list)` to fetch all tags",
+        "Page displays tags in a responsive grid layout",
+        "Each tag shows name and content count",
+        "Each tag links to `/tags/[slug]`",
+        "Empty state shows message when no tags exist",
+        "Tags are sorted alphabetically (handled by query)",
+        "Typecheck passes",
+        "Verify in browser: tags list displays, links work, empty state works"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Admin Update Tag Mutation",
+      "description": "As an admin, I want to edit a tag's name and description so that I can maintain the taxonomy.",
+      "acceptanceCriteria": [
+        "Implement `tags.update` mutation in `convex/tags.ts`",
+        "Mutation args: id (tag ID), name (required string), description (optional string)",
+        "Mutation uses `requireRole(ctx, ['admin'])` to enforce admin-only access",
+        "Mutation uses `ctx.db.patch` to update name and description only",
+        "Slug is NOT updated (immutable after creation)",
+        "Returns null on success",
+        "Throws error if tag ID not found",
+        "Write tests: admin updates tag, non-admin throws AuthorizationError, tag not found",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Admin Delete Tag Mutation",
+      "description": "As an admin, I want to delete a tag so that I can remove obsolete topics from the taxonomy.",
+      "acceptanceCriteria": [
+        "Implement `tags.remove` mutation in `convex/tags.ts`",
+        "Mutation args: id (tag ID)",
+        "Mutation uses `requireRole(ctx, ['admin'])` to enforce admin-only access",
+        "Before deleting tag, remove tag ID from all content types that reference it",
+        "Query each content type, filter for items with tag in tags array, patch to remove",
+        "Delete the tag document using `ctx.db.delete(id)`",
+        "Returns null on success",
+        "Write tests: admin deletes tag, tag removed from content, non-admin throws AuthorizationError",
+        "Typecheck passes",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

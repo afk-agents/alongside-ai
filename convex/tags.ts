@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, MutationCtx } from "./_generated/server";
+import { mutation, query, MutationCtx } from "./_generated/server";
 import { requireRole } from "./users";
 
 /**
@@ -119,5 +119,69 @@ export const create = mutation({
     });
 
     return tagId;
+  },
+});
+
+/**
+ * Get a tag by its slug.
+ *
+ * Uses the by_slug index for efficient lookup.
+ * Returns the full tag object or null if not found.
+ */
+export const getBySlug = query({
+  args: { slug: v.string() },
+  returns: v.union(
+    v.object({
+      _id: v.id("tags"),
+      _creationTime: v.number(),
+      name: v.string(),
+      slug: v.string(),
+      description: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const tag = await ctx.db
+      .query("tags")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    return tag;
+  },
+});
+
+/**
+ * Get multiple tags by their IDs.
+ *
+ * Returns an array of tags with _id, name, and slug.
+ * Skips any IDs that don't exist (no error thrown).
+ * Returns empty array if no IDs provided or none found.
+ */
+export const getByIds = query({
+  args: { tagIds: v.array(v.id("tags")) },
+  returns: v.array(
+    v.object({
+      _id: v.id("tags"),
+      name: v.string(),
+      slug: v.string(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    if (args.tagIds.length === 0) {
+      return [];
+    }
+
+    const tags = await Promise.all(
+      args.tagIds.map((id) => ctx.db.get(id))
+    );
+
+    // Filter out null values (deleted/non-existent tags) and map to return type
+    return tags
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== null)
+      .map((tag) => ({
+        _id: tag._id,
+        name: tag.name,
+        slug: tag.slug,
+      }));
   },
 });

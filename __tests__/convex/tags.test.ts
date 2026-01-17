@@ -112,6 +112,138 @@ describe("validateSlug", () => {
 // Type alias for the test context
 type TestContext = ReturnType<typeof convexTest>;
 
+describe("tags.getBySlug query", () => {
+  it("returns tag when slug exists", async () => {
+    const t = convexTest(schema);
+
+    // Create a tag directly in the database
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "LangChain",
+        slug: "langchain",
+        description: "Framework for LLM applications",
+      });
+    });
+
+    const tag = await t.query(api.tags.getBySlug, { slug: "langchain" });
+
+    expect(tag).not.toBeNull();
+    expect(tag?._id).toBe(tagId);
+    expect(tag?.name).toBe("LangChain");
+    expect(tag?.slug).toBe("langchain");
+    expect(tag?.description).toBe("Framework for LLM applications");
+    expect(tag?._creationTime).toBeDefined();
+  });
+
+  it("returns null when slug does not exist", async () => {
+    const t = convexTest(schema);
+
+    const tag = await t.query(api.tags.getBySlug, { slug: "nonexistent" });
+
+    expect(tag).toBeNull();
+  });
+
+  it("returns tag without description when description is not set", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "RAG",
+        slug: "rag",
+      });
+    });
+
+    const tag = await t.query(api.tags.getBySlug, { slug: "rag" });
+
+    expect(tag).not.toBeNull();
+    expect(tag?.name).toBe("RAG");
+    expect(tag?.description).toBeUndefined();
+  });
+});
+
+describe("tags.getByIds query", () => {
+  it("returns tags for given IDs", async () => {
+    const t = convexTest(schema);
+
+    // Create multiple tags
+    const { tagId1, tagId2 } = await t.run(async (ctx) => {
+      const tagId1 = await ctx.db.insert("tags", {
+        name: "LangChain",
+        slug: "langchain",
+      });
+      const tagId2 = await ctx.db.insert("tags", {
+        name: "RAG",
+        slug: "rag",
+      });
+      return { tagId1, tagId2 };
+    });
+
+    const tags = await t.query(api.tags.getByIds, { tagIds: [tagId1, tagId2] });
+
+    expect(tags).toHaveLength(2);
+    expect(tags.find((t) => t._id === tagId1)).toMatchObject({
+      _id: tagId1,
+      name: "LangChain",
+      slug: "langchain",
+    });
+    expect(tags.find((t) => t._id === tagId2)).toMatchObject({
+      _id: tagId2,
+      name: "RAG",
+      slug: "rag",
+    });
+  });
+
+  it("returns empty array when no IDs provided", async () => {
+    const t = convexTest(schema);
+
+    const tags = await t.query(api.tags.getByIds, { tagIds: [] });
+
+    expect(tags).toEqual([]);
+  });
+
+  it("returns empty array when none of the IDs exist", async () => {
+    const t = convexTest(schema);
+
+    // Create a tag to get a valid ID format, then delete it
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", {
+        name: "Temporary",
+        slug: "temporary",
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    const tags = await t.query(api.tags.getByIds, { tagIds: [deletedId] });
+
+    expect(tags).toEqual([]);
+  });
+
+  it("returns only existing tags when some IDs are invalid", async () => {
+    const t = convexTest(schema);
+
+    // Create one valid tag and get a deleted ID
+    const { validId, deletedId } = await t.run(async (ctx) => {
+      const validId = await ctx.db.insert("tags", {
+        name: "Valid Tag",
+        slug: "valid-tag",
+      });
+      const deletedId = await ctx.db.insert("tags", {
+        name: "Temporary",
+        slug: "temporary",
+      });
+      await ctx.db.delete(deletedId);
+      return { validId, deletedId };
+    });
+
+    const tags = await t.query(api.tags.getByIds, { tagIds: [validId, deletedId] });
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0]._id).toBe(validId);
+    expect(tags[0].name).toBe("Valid Tag");
+  });
+});
+
 describe("tags.create mutation", () => {
   // Helper to create test context with admin user
   async function setupAdminUser(t: TestContext) {
