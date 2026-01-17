@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import { requireRole } from "./users";
 
 /**
  * Profile return type validator for public queries.
@@ -76,5 +77,109 @@ export const getBySlug = query({
     }
 
     return profile;
+  },
+});
+
+/**
+ * Validate slug format.
+ * Slugs must be 2-50 lowercase alphanumeric characters with single hyphens between words.
+ */
+function validateSlug(slug: string): boolean {
+  if (!slug) return false;
+  if (slug.length < 2 || slug.length > 50) return false;
+  const validPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  return validPattern.test(slug);
+}
+
+/**
+ * Check if a slug already exists, excluding a specific profile.
+ */
+async function slugExistsExcluding(
+  ctx: { db: { query: (table: "profiles") => unknown } },
+  slug: string,
+  excludeProfileId: string
+): Promise<boolean> {
+  const existing = await (ctx.db as import("./_generated/server").QueryCtx["db"])
+    .query("profiles")
+    .withIndex("by_slug", (q) => q.eq("slug", slug))
+    .unique();
+
+  return existing !== null && existing._id !== excludeProfileId;
+}
+
+/**
+ * Update a profile (admin only).
+ *
+ * Requires admin role. Accepts optional fields and only updates provided fields.
+ * Validates slug format and checks for uniqueness.
+ */
+export const update = mutation({
+  args: {
+    id: v.id("profiles"),
+    displayName: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    slug: v.optional(v.string()),
+    socialLinks: v.optional(
+      v.object({
+        linkedin: v.optional(v.string()),
+        twitter: v.optional(v.string()),
+        github: v.optional(v.string()),
+        website: v.optional(v.string()),
+      })
+    ),
+    workingOnNow: v.optional(v.string()),
+    skills: v.optional(v.array(v.string())),
+    location: v.optional(v.string()),
+    profileStatus: v.optional(
+      v.union(
+        v.literal("locked"),
+        v.literal("unlocked"),
+        v.literal("published")
+      )
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    // Verify profile exists
+    const profile = await ctx.db.get(args.id);
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    // Validate slug if provided
+    if (args.slug !== undefined) {
+      if (!validateSlug(args.slug)) {
+        throw new Error(
+          `Invalid slug format: "${args.slug}". Slugs must be 2-50 lowercase alphanumeric characters with single hyphens between words.`
+        );
+      }
+
+      // Check slug uniqueness (excluding current profile)
+      if (await slugExistsExcluding(ctx, args.slug, args.id)) {
+        throw new Error(
+          `Slug "${args.slug}" is already in use. Please choose a different slug.`
+        );
+      }
+    }
+
+    // Build patch object with only provided fields
+    const patch: Record<string, unknown> = {};
+    if (args.displayName !== undefined) patch.displayName = args.displayName;
+    if (args.bio !== undefined) patch.bio = args.bio;
+    if (args.slug !== undefined) patch.slug = args.slug;
+    if (args.socialLinks !== undefined) patch.socialLinks = args.socialLinks;
+    if (args.workingOnNow !== undefined) patch.workingOnNow = args.workingOnNow;
+    if (args.skills !== undefined) patch.skills = args.skills;
+    if (args.location !== undefined) patch.location = args.location;
+    if (args.profileStatus !== undefined)
+      patch.profileStatus = args.profileStatus;
+
+    // Apply the patch
+    await ctx.db.patch(args.id, patch);
+
+    return null;
   },
 });

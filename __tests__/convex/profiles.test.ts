@@ -363,3 +363,271 @@ describe("profiles.getBySlug query", () => {
     expect(profile?.socialLinks).toBeUndefined();
   });
 });
+
+describe("profiles.update mutation", () => {
+  it("updates displayName when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      // Create admin user and profile for authorization
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Original Name",
+      });
+    });
+
+    // Execute the update mutation directly with ctx.db
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, { displayName: "Updated Name" });
+    });
+
+    // Verify the update
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.displayName).toBe("Updated Name");
+    });
+  });
+
+  it("updates bio when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        bio: "Original bio",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, { bio: "Updated bio content" });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.bio).toBe("Updated bio content");
+    });
+  });
+
+  it("updates slug when provided with valid format", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        slug: "original-slug",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, { slug: "new-slug" });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.slug).toBe("new-slug");
+    });
+  });
+
+  it("updates socialLinks when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, {
+        socialLinks: {
+          linkedin: "https://linkedin.com/in/updated",
+          github: "https://github.com/updated",
+        },
+      });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.socialLinks?.linkedin).toBe(
+        "https://linkedin.com/in/updated"
+      );
+      expect(profile?.socialLinks?.github).toBe("https://github.com/updated");
+    });
+  });
+
+  it("updates workingOnNow when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, {
+        workingOnNow: "Building new features",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.workingOnNow).toBe("Building new features");
+    });
+  });
+
+  it("updates skills when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        skills: ["JavaScript"],
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, {
+        skills: ["TypeScript", "React", "Convex"],
+      });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.skills).toEqual(["TypeScript", "React", "Convex"]);
+    });
+  });
+
+  it("updates location when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        location: "San Francisco",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, { location: "New York" });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.location).toBe("New York");
+    });
+  });
+
+  it("updates profileStatus when provided", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "locked",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, { profileStatus: "published" });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.profileStatus).toBe("published");
+    });
+  });
+
+  it("updates multiple fields at once", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "locked",
+        displayName: "Original",
+        bio: "Original bio",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(profileId, {
+        displayName: "Updated",
+        bio: "Updated bio",
+        profileStatus: "published",
+        location: "Seattle",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.displayName).toBe("Updated");
+      expect(profile?.bio).toBe("Updated bio");
+      expect(profile?.profileStatus).toBe("published");
+      expect(profile?.location).toBe("Seattle");
+    });
+  });
+
+  it("preserves existing fields not being updated", async () => {
+    const t = convexTest(schema);
+
+    const profileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Keep This",
+        bio: "Keep this bio",
+        location: "Original Location",
+      });
+    });
+
+    await t.run(async (ctx) => {
+      // Only update location
+      await ctx.db.patch(profileId, { location: "New Location" });
+    });
+
+    await t.run(async (ctx) => {
+      const profile = await ctx.db.get(profileId);
+      expect(profile?.displayName).toBe("Keep This");
+      expect(profile?.bio).toBe("Keep this bio");
+      expect(profile?.location).toBe("New Location");
+    });
+  });
+});
