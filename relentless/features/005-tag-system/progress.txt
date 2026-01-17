@@ -1,8 +1,8 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T02:13:26.715Z'
-stories_completed: 2
+last_updated: '2026-01-17T04:20:00.000Z'
+stories_completed: 4
 patterns: []
 ---
 
@@ -137,5 +137,41 @@ patterns: []
 - Convex queries need to collect all items first then filter in memory (no "contains" index)
 - Promise.all is efficient for parallel collection queries
 - Status type needs v.union with all literal values to match schema exactly
+
+---
+
+## 2026-01-17 - US-004: Tag Query - list with content counts
+
+**Implemented:**
+- Added `tags.list` query: fetches all tags with content counts for the tags listing page
+- Returns array of objects with: _id, _creationTime, name, slug, description (optional), contentCount
+- Tags sorted alphabetically by name using case-insensitive comparison (localeCompare)
+- Content counts only include published content:
+  - Events: isArchived !== true
+  - Projects: isPublished === true
+  - Experiments: isPublished === true
+  - Articles: always counted (no publish state)
+  - Videos: isPublished === true
+- Uses Map to efficiently count content items per tag
+
+**Files Changed:**
+- convex/tags.ts (modified - added list query)
+- __tests__/convex/tags.test.ts (modified - added 9 tests for tags.list)
+
+**Tests Added (9 total):**
+- returns empty array when no tags exist
+- returns all tags sorted alphabetically by name (case-insensitive)
+- returns tags with correct shape including contentCount
+- returns contentCount of 0 for tag with no content
+- counts published content across all content types
+- does not count unpublished content
+- does not count archived events
+- returns correct counts for multiple tags
+- returns tag without description when description is not set
+
+**Learnings:**
+- Case-insensitive sorting in JavaScript: use `a.name.toLowerCase().localeCompare(b.name.toLowerCase())`
+- Map is efficient for counting by ID - O(1) lookup and update
+- Content counting logic mirrors getContentByTagId filtering for consistency
 
 ---

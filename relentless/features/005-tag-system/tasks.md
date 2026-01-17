@@ -123,25 +123,25 @@
 **Description:** As a visitor, I want to browse all available tags so that I can discover topics covered on the site.
 
 **Acceptance Criteria:**
-- [ ] `tags.list` query returns all tags sorted alphabetically by name
-- [ ] Each tag includes contentCount (total items across all content types)
+- [x] `tags.list` query returns all tags sorted alphabetically by name
+- [x] Each tag includes contentCount (total items across all content types)
 - [ ] `/tags` page displays all tags as a grid/list
 - [ ] Each tag shows name and content count
 - [ ] Each tag links to its detail page (`/tags/[slug]`)
 - [ ] Empty state message when no tags exist
 - [ ] Tests cover: query returns sorted tags with counts, page renders tag list
-- [ ] Typecheck passes
-- [ ] Lint passes
-- [ ] Tests pass
+- [x] Typecheck passes
+- [x] Lint passes
+- [x] Tests pass
 
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P2
-**Status:** pending
+**Status:** in_progress
 
 **Implementation Tasks:**
-- [ ] T018 [US-004] Write tests for `tags.list` query
-- [ ] T019 [US-004] Implement `tags.list` query with content counts
+- [x] T018 [US-004] Write tests for `tags.list` query
+- [x] T019 [US-004] Implement `tags.list` query with content counts
 - [ ] T020 [US-004] Create `/tags/page.tsx` listing page with tests
 
 ---

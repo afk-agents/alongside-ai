@@ -79,8 +79,8 @@
         "Tests pass"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Implemented tags.list query that returns all tags sorted alphabetically (case-insensitive) with contentCount field. Content counts only include published items (isPublished=true for projects/experiments/videos, isArchived!==true for events, articles always counted). 9 tests added."
     },
     {
       "id": "US-005",
