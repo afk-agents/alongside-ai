@@ -1,5 +1,12 @@
 import { v } from "convex/values";
-import { action, mutation, query, MutationCtx } from "./_generated/server";
+import {
+  action,
+  internalQuery,
+  mutation,
+  query,
+  MutationCtx,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 // RSS Parser import - used for Substack RSS import functionality
@@ -903,5 +910,199 @@ export const testRssParserImport = action({
       success: false,
       message: "rss-parser imported but missing expected methods",
     };
+  },
+});
+
+/**
+ * Internal query to get all existing substack URLs for duplicate detection.
+ *
+ * @internal Used by parseRssFeed action to check for duplicates
+ */
+export const getExistingSubstackUrls = internalQuery({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx): Promise<string[]> => {
+    const articles = await ctx.db.query("articles").collect();
+    return articles
+      .filter((article) => article.substackUrl !== undefined)
+      .map((article) => article.substackUrl as string);
+  },
+});
+
+/**
+ * Internal query to get a user's profile by token identifier.
+ * Used by actions that need to check user roles.
+ *
+ * @internal
+ */
+export const getProfileByTokenId = internalQuery({
+  args: {
+    tokenIdentifier: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("profiles"),
+      role: v.union(
+        v.literal("admin"),
+        v.literal("member"),
+        v.literal("guest")
+      ),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Extract user ID from token identifier (format: "issuer|userId")
+    const parts = args.tokenIdentifier.split("|");
+    if (parts.length < 2) {
+      return null;
+    }
+
+    const userIdStr = parts[parts.length - 1];
+
+    // Try to find user and their profile
+    // The token identifier format may vary, so we search by the extracted ID
+    const profiles = await ctx.db.query("profiles").collect();
+
+    // Find profile that matches the user ID
+    const profile = profiles.find((p) => p.userId.toString() === userIdStr);
+
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      _id: profile._id,
+      role: profile.role,
+    };
+  },
+});
+
+/**
+ * Parsed RSS item type for parseRssFeed return value.
+ */
+interface ParsedRssItem {
+  title: string;
+  content: string;
+  publishedAt: number;
+  substackUrl: string;
+  excerpt?: string;
+  alreadyImported: boolean;
+}
+
+/**
+ * Parsed RSS item validator for feed parsing results.
+ */
+const parsedRssItemValidator = v.object({
+  title: v.string(),
+  content: v.string(),
+  publishedAt: v.number(),
+  substackUrl: v.string(),
+  excerpt: v.optional(v.string()),
+  alreadyImported: v.boolean(),
+});
+
+/**
+ * Parse a Substack RSS feed URL and return articles for import preview.
+ *
+ * Fetches and parses the RSS feed, extracting article metadata.
+ * Checks each item against existing articles to mark duplicates.
+ *
+ * Requires admin role.
+ *
+ * @param rssUrl - The Substack RSS feed URL to parse
+ * @returns Array of parsed articles with alreadyImported flag
+ */
+export const parseRssFeed = action({
+  args: {
+    rssUrl: v.string(),
+  },
+  returns: v.array(parsedRssItemValidator),
+  handler: async (ctx, args): Promise<ParsedRssItem[]> => {
+    // Require admin role
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Authentication required");
+    }
+
+    // Get user's profile to check role
+    // Note: In actions, we need to use runQuery to access the database
+    const profile = await ctx.runQuery(internal.articles.getProfileByTokenId, {
+      tokenIdentifier: identity.tokenIdentifier,
+    });
+
+    if (!profile || profile.role !== "admin") {
+      throw new Error("Required role: admin");
+    }
+
+    // Validate URL format
+    if (
+      !args.rssUrl.startsWith("http://") &&
+      !args.rssUrl.startsWith("https://")
+    ) {
+      throw new Error(
+        "Invalid URL format. URL must start with http:// or https://"
+      );
+    }
+
+    // Create parser with Substack-specific configuration
+    const parser = new Parser({
+      customFields: {
+        item: [["content:encoded", "contentEncoded"]],
+      },
+    });
+
+    // Parse the RSS feed
+    let feed;
+    try {
+      feed = await parser.parseURL(args.rssUrl);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      throw new Error(`Failed to parse RSS feed: ${errorMessage}`);
+    }
+
+    // Get existing substack URLs to check for duplicates
+    const existingUrls: string[] = await ctx.runQuery(
+      internal.articles.getExistingSubstackUrls,
+      {}
+    );
+    const existingUrlSet = new Set<string>(existingUrls);
+
+    // Map feed items to our structure
+    const parsedItems: ParsedRssItem[] = feed.items.map((item) => {
+      // Use content:encoded if available (full HTML content), fallback to content or description
+      const content: string =
+        (item as { contentEncoded?: string }).contentEncoded ||
+        item.content ||
+        item.contentSnippet ||
+        "";
+
+      // Parse publication date
+      const publishedAt: number = item.pubDate
+        ? new Date(item.pubDate).getTime()
+        : Date.now();
+
+      // Generate excerpt from content snippet if available
+      const excerpt: string | undefined = item.contentSnippet
+        ? item.contentSnippet.slice(0, 160)
+        : undefined;
+
+      // Get article link (substack URL)
+      const substackUrl: string = item.link || "";
+
+      // Check if already imported
+      const alreadyImported: boolean = existingUrlSet.has(substackUrl);
+
+      return {
+        title: item.title || "Untitled",
+        content,
+        publishedAt,
+        substackUrl,
+        excerpt,
+        alreadyImported,
+      };
+    });
+
+    return parsedItems;
   },
 });

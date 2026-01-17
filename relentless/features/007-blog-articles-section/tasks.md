@@ -1091,27 +1091,27 @@ As an admin, I need to parse a Substack RSS feed URL to preview articles for imp
 
 ### Acceptance Criteria
 
-- [ ] `articles.parseRssFeed` action parses RSS URL
-- [ ] Returns array of parsed articles with: title, content, publishedAt, substackUrl, excerpt
-- [ ] Indicates which articles are already imported (matching substackUrl)
-- [ ] Handles RSS parsing errors gracefully
-- [ ] Requires admin role
-- [ ] Validates URL format
+- [x] `articles.parseRssFeed` action parses RSS URL
+- [x] Returns array of parsed articles with: title, content, publishedAt, substackUrl, excerpt
+- [x] Indicates which articles are already imported (matching substackUrl)
+- [x] Handles RSS parsing errors gracefully
+- [x] Requires admin role
+- [x] Validates URL format
 
 ### Tasks
 
 1. **Implement parseRssFeed action in convex/articles.ts**
-   - Import rss-parser
-   - Require admin role
-   - Validate URL format (starts with http/https)
-   - Configure parser for Substack feeds (content:encoded field)
-   - Parse feed URL
-   - Handle errors (network, parsing)
-   - Check existing articles by substackUrl (internal query)
-   - Return parsed items with alreadyImported flag
+   - [x] Import rss-parser
+   - [x] Require admin role
+   - [x] Validate URL format (starts with http/https)
+   - [x] Configure parser for Substack feeds (content:encoded field)
+   - [x] Parse feed URL
+   - [x] Handle errors (network, parsing)
+   - [x] Check existing articles by substackUrl (internal query)
+   - [x] Return parsed items with alreadyImported flag
 
 2. **Add internal helper query**
-   - getExistingSubstackUrls: return all substackUrls for duplicate detection
+   - [x] getExistingSubstackUrls: return all substackUrls for duplicate detection
 
 ### Test Scenarios
 

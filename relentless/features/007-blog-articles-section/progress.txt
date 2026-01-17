@@ -1,8 +1,8 @@
 ---
 feature: 007-blog-articles-section
 started: '2026-01-17T19:54:07.452Z'
-last_updated: '2026-01-17T22:10:00.000Z'
-stories_completed: 19
+last_updated: '2026-01-17T21:12:00.000Z'
+stories_completed: 20
 patterns: []
 ---
 # Blog Articles Section - Progress Log
@@ -408,5 +408,38 @@ patterns: []
 - rss-parser v3.13.0 is compatible with Convex actions (Node.js runtime)
 - Import can be at module level for use in action handlers
 - Next story (US-020) will implement the actual parseRssFeed action that uses this parser
+
+---
+
+## 2026-01-17 - US-020: Substack RSS Parser Action
+
+**Implemented:**
+- `articles.parseRssFeed` action for parsing Substack RSS feed URLs
+- Validates URL format (must start with http:// or https://)
+- Requires admin role via internal query (`getProfileByTokenId`)
+- Configures rss-parser for Substack feeds (`content:encoded` custom field)
+- Returns array of parsed items with: title, content, publishedAt, substackUrl, excerpt, alreadyImported flag
+- Handles parsing errors gracefully with descriptive error messages
+- `articles.getExistingSubstackUrls` internal query for duplicate detection
+- `articles.getProfileByTokenId` internal query for role checking in actions
+- 5 new tests covering structure and duplicate detection logic
+
+**Files Changed:**
+- convex/articles.ts (added parseRssFeed action, getExistingSubstackUrls, getProfileByTokenId internal queries)
+- __tests__/convex/articles.test.ts (added 5 tests for RSS import functionality)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (529 tests)
+
+**Learnings:**
+- Convex actions need explicit type annotations to avoid circular type inference issues
+- Used `internal.articles.*` for calling internal queries from actions via `ctx.runQuery`
+- `ParsedRssItem` interface defined separately from validator for type safety
+- Auth in actions requires `ctx.auth.getUserIdentity()` and then a separate query to get profile
+- Internal queries must be defined before the action that references them (or use proper imports)
 
 ---

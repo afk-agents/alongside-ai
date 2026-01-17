@@ -107,9 +107,9 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 
 ### FR-010: Substack RSS Import (P3)
 
-- [ ] `articles.parseRssFeed` action fetches and parses RSS URL
-- [ ] RSS items include title, content, publishedAt, substackUrl
-- [ ] Already-imported articles marked with `alreadyImported: true`
+- [x] `articles.parseRssFeed` action fetches and parses RSS URL
+- [x] RSS items include title, content, publishedAt, substackUrl
+- [x] Already-imported articles marked with `alreadyImported: true`
 - [ ] `articles.importFromRss` creates articles from selected items
 - [ ] Duplicate detection via substackUrl prevents re-import
 - [ ] Returns import/skip counts
@@ -331,7 +331,7 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 - [ ] Public queries: `list`, `listFeatured`, `getBySlug`, `getRelated` - no auth required
 - [ ] Admin queries: `listAdmin`, `get` - require admin role
 - [ ] Admin mutations: `create`, `update`, `remove` - require admin role
-- [ ] Admin actions: `parseRssFeed` - require admin role
+- [x] Admin actions: `parseRssFeed` - require admin role
 - [ ] Admin mutation: `importFromRss` - require admin role
 - [ ] Unauthorized access returns clear error (not data leak)
 
