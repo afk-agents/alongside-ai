@@ -1159,3 +1159,169 @@ describe("profiles.list query", () => {
     expect(minimalProfile?.slug).toBeUndefined();
   });
 });
+
+describe("profiles.get query", () => {
+  async function setupAdminUser(t: ReturnType<typeof convexTest>) {
+    const userId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+        displayName: "Admin User",
+        slug: "admin-user",
+      });
+      return userId;
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+    };
+  }
+
+  async function setupGuestUser(t: ReturnType<typeof convexTest>) {
+    const userId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      await ctx.db.insert("profiles", {
+        userId,
+        role: "guest",
+        profileStatus: "locked",
+      });
+      return userId;
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+    };
+  }
+
+  it("returns full profile by ID when called by admin", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create a target profile
+    const targetProfileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Target User",
+        bio: "A test bio",
+        slug: "target-user",
+        location: "Test Location",
+        skills: ["skill1", "skill2"],
+        socialLinks: {
+          linkedin: "https://linkedin.com/in/test",
+          github: "https://github.com/test",
+        },
+        workingOnNow: "Testing things",
+      });
+    });
+
+    const profile = await adminCtx.query(api.profiles.get, {
+      id: targetProfileId,
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?._id).toBe(targetProfileId);
+    expect(profile?.displayName).toBe("Target User");
+    expect(profile?.bio).toBe("A test bio");
+    expect(profile?.slug).toBe("target-user");
+    expect(profile?.location).toBe("Test Location");
+    expect(profile?.skills).toEqual(["skill1", "skill2"]);
+    expect(profile?.socialLinks?.linkedin).toBe("https://linkedin.com/in/test");
+    expect(profile?.workingOnNow).toBe("Testing things");
+  });
+
+  it("returns null for non-existent profile ID", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create a fake ID by creating and deleting a profile
+    const fakeId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "locked",
+      });
+      await ctx.db.delete(profileId);
+      return profileId;
+    });
+
+    const profile = await adminCtx.query(api.profiles.get, { id: fakeId });
+
+    expect(profile).toBeNull();
+  });
+
+  it("throws error when called by non-admin", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+
+    // Create a target profile
+    const targetProfileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "locked",
+      });
+    });
+
+    await expect(
+      guestCtx.query(api.profiles.get, { id: targetProfileId })
+    ).rejects.toThrow();
+  });
+
+  it("throws error when called without authentication", async () => {
+    const t = convexTest(schema);
+
+    const targetProfileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "locked",
+      });
+    });
+
+    await expect(
+      t.query(api.profiles.get, { id: targetProfileId })
+    ).rejects.toThrow();
+  });
+
+  it("returns profile with minimal fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const targetProfileId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "guest",
+        profileStatus: "locked",
+      });
+    });
+
+    const profile = await adminCtx.query(api.profiles.get, {
+      id: targetProfileId,
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?.role).toBe("guest");
+    expect(profile?.profileStatus).toBe("locked");
+    expect(profile?.displayName).toBeUndefined();
+    expect(profile?.bio).toBeUndefined();
+  });
+});

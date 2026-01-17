@@ -97,6 +97,59 @@ export const getBySlug = query({
 });
 
 /**
+ * Full profile validator for admin editing.
+ * Includes all fields including system fields.
+ */
+const fullProfileValidator = v.union(
+  v.object({
+    _id: v.id("profiles"),
+    _creationTime: v.number(),
+    userId: v.id("users"),
+    role: v.union(v.literal("admin"), v.literal("member"), v.literal("guest")),
+    profileStatus: v.union(
+      v.literal("locked"),
+      v.literal("unlocked"),
+      v.literal("published")
+    ),
+    displayName: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    photoUrl: v.optional(v.string()),
+    socialLinks: v.optional(
+      v.object({
+        linkedin: v.optional(v.string()),
+        twitter: v.optional(v.string()),
+        github: v.optional(v.string()),
+        website: v.optional(v.string()),
+      })
+    ),
+    workingOnNow: v.optional(v.string()),
+    skills: v.optional(v.array(v.string())),
+    location: v.optional(v.string()),
+    slug: v.optional(v.string()),
+    photoStorageId: v.optional(v.id("_storage")),
+  }),
+  v.null()
+);
+
+/**
+ * Get a single profile by ID (admin only).
+ *
+ * Returns the full profile with all fields for editing.
+ * Returns null if the profile doesn't exist.
+ */
+export const get = query({
+  args: { id: v.id("profiles") },
+  returns: fullProfileValidator,
+  handler: async (ctx, args) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    const profile = await ctx.db.get(args.id);
+    return profile;
+  },
+});
+
+/**
  * List all profiles (admin only).
  *
  * Returns all profiles with minimal fields for table display.
