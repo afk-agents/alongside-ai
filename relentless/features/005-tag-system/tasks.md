@@ -64,28 +64,28 @@
 - [x] `tags.getContentByTagId` query returns grouped content (events, projects, experiments, articles, videos)
 - [x] Only published content is returned (isPublished=true, not archived)
 - [x] Content is ordered by recency (events by date, articles by publishedAt, others by _creationTime)
-- [ ] `/tags/[slug]` page displays tag name as title
-- [ ] Page groups content by type with section headers
-- [ ] Empty content types are not displayed (no empty sections)
-- [ ] Non-existent slug shows 404 page
-- [ ] Tag with 0 content shows "No content tagged with [name] yet" message
-- [ ] Tests cover: query returns correct content, page renders sections, 404 handling
-- [ ] Typecheck passes
-- [ ] Lint passes
-- [ ] Tests pass
+- [x] `/tags/[slug]` page displays tag name as title
+- [x] Page groups content by type with section headers
+- [x] Empty content types are not displayed (no empty sections)
+- [x] Non-existent slug shows 404 page
+- [x] Tag with 0 content shows "No content tagged with [name] yet" message
+- [x] Tests cover: query returns correct content, page renders sections, 404 handling
+- [x] Typecheck passes
+- [x] Lint passes
+- [x] Tests pass
 
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P1
-**Status:** in_progress
+**Status:** completed
 
 **Implementation Tasks:**
 - [x] T008 [US-002] Write tests for `tags.getBySlug` query
 - [x] T009 [US-002] Implement `tags.getBySlug` query
 - [x] T010 [US-002] Write tests for `tags.getContentByTagId` query
 - [x] T011 [US-002] Implement `tags.getContentByTagId` query
-- [ ] T012 [P] [US-002] Create `TagContentSection` component with tests
-- [ ] T013 [US-002] Create `/tags/[slug]/page.tsx` with 404 handling
+- [x] T012 [P] [US-002] Create `TagContentSection` component with tests
+- [x] T013 [US-002] Create `/tags/[slug]/page.tsx` with 404 handling
 
 ---
 

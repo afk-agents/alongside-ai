@@ -1,8 +1,8 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T05:23:00.000Z'
-stories_completed: 5
+last_updated: '2026-01-17T04:30:00.000Z'
+stories_completed: 6
 patterns: []
 ---
 
@@ -206,5 +206,41 @@ patterns: []
 - Vitest requires `bun run test` (vitest run) not `bun test` for jsdom environment
 - Component tests can mock useQuery to test different data scenarios
 - TagList "use client" directive required for useQuery hook
+
+---
+
+## 2026-01-17 - US-006: Tag Detail Page
+
+**Implemented:**
+- Created `TagContentSection` component: displays a section of content items for a content type
+  - Accepts `title` (string), `items` (array with title and slug), `linkPrefix` (string)
+  - Renders section with h2 title and item count in parentheses
+  - Returns null when items array is empty (hidden section)
+  - Each item renders as a link to `linkPrefix/[slug]`
+  - Styled with Tailwind: section margin, heading styles, hover links
+- Created `/tags/[slug]` page: tag detail page showing all content for a tag
+  - Uses `useQuery(api.tags.getBySlug, { slug })` to fetch tag data
+  - Uses `useQuery(api.tags.getContentByTagId, { tagId })` with skip when tag not loaded
+  - Shows loading state while tag query is undefined
+  - Calls `notFound()` when tag is null to show 404
+  - Displays tag name as h1 title, optional description paragraph
+  - Renders TagContentSection for each content type with items
+  - Uses correct URL prefixes: /events, /projects, /lab, /blog, /videos
+  - Shows empty state message when no content tagged
+
+**Files Changed:**
+- components/tags/TagContentSection.tsx (new)
+- app/tags/[slug]/page.tsx (new)
+- __tests__/components/tags/TagContentSection.test.tsx (new)
+- __tests__/app/tags/TagDetailPage.test.tsx (updated existing tests)
+
+**Tests Added (7 total):**
+- TagContentSection: renders with title and count, correct links, hidden when empty, handles single item, special characters, heading element, items in order
+
+**Learnings:**
+- Next.js `notFound()` function throws an error, so TypeScript needs `return null` after it
+- When text is split across elements (e.g., `<span>` inside `<p>`), use more specific queries
+- URL prefixes should match actual app routing: /blog for articles, /lab for experiments
+- Existing test files may need updates when implementation changes
 
 ---
