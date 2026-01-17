@@ -1,8 +1,8 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T02:29:54.978Z'
-stories_completed: 6
+last_updated: '2026-01-17T05:33:00.000Z'
+stories_completed: 7
 patterns: []
 ---
 
@@ -242,5 +242,40 @@ patterns: []
 - When text is split across elements (e.g., `<span>` inside `<p>`), use more specific queries
 - URL prefixes should match actual app routing: /blog for articles, /lab for experiments
 - Existing test files may need updates when implementation changes
+
+---
+
+## 2026-01-17 - US-007: Tags Listing Page
+
+**Implemented:**
+- Created `app/tags/page.tsx`: tags listing page displaying all tags in the system
+  - Uses `useQuery(api.tags.list)` to fetch all tags
+  - Shows loading state while query is undefined
+  - Shows empty state when no tags exist: "No tags have been created yet"
+  - Displays tags in responsive grid layout (1 col mobile, 2 cols sm, 3 cols lg)
+  - Each tag rendered as a card with name and content count
+  - Content count uses singular/plural ("1 item" vs "5 items")
+  - Each tag links to `/tags/[slug]` detail page
+  - Styled with Tailwind: border, hover states, dark mode support
+
+**Files Changed:**
+- app/tags/page.tsx (new)
+- __tests__/app/tags/TagsListingPage.test.tsx (new)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/prd.json (updated)
+
+**Tests Added (11 total):**
+- Loading state: shows loading message
+- Empty state: shows message when no tags exist
+- Tags display: page title, all tags displayed, content counts, correct links
+- Grid layout: responsive grid classes present
+- Query calls: calls tags.list query
+- Singular/plural: correct item/items text based on count
+
+**Learnings:**
+- Grid layout with Tailwind: use `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` for responsive columns
+- Conditional singular/plural: `{count} {count === 1 ? "item" : "items"}`
+- Test for grid by checking for `.grid` class selector
+- Follow existing page patterns (TagDetailPage) for consistency in loading/empty states
 
 ---

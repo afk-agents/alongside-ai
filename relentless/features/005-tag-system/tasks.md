@@ -125,11 +125,11 @@
 **Acceptance Criteria:**
 - [x] `tags.list` query returns all tags sorted alphabetically by name
 - [x] Each tag includes contentCount (total items across all content types)
-- [ ] `/tags` page displays all tags as a grid/list
-- [ ] Each tag shows name and content count
-- [ ] Each tag links to its detail page (`/tags/[slug]`)
-- [ ] Empty state message when no tags exist
-- [ ] Tests cover: query returns sorted tags with counts, page renders tag list
+- [x] `/tags` page displays all tags as a grid/list
+- [x] Each tag shows name and content count
+- [x] Each tag links to its detail page (`/tags/[slug]`)
+- [x] Empty state message when no tags exist
+- [x] Tests cover: query returns sorted tags with counts, page renders tag list
 - [x] Typecheck passes
 - [x] Lint passes
 - [x] Tests pass
@@ -137,12 +137,12 @@
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P2
-**Status:** in_progress
+**Status:** completed
 
 **Implementation Tasks:**
 - [x] T018 [US-004] Write tests for `tags.list` query
 - [x] T019 [US-004] Implement `tags.list` query with content counts
-- [ ] T020 [US-004] Create `/tags/page.tsx` listing page with tests
+- [x] T020 [US-004] Create `/tags/page.tsx` listing page with tests
 
 ---
 
