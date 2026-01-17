@@ -1,0 +1,553 @@
+---
+feature: 007-blog-articles-section
+started: '2026-01-17T19:54:07.452Z'
+last_updated: '2026-01-17T21:13:40.936Z'
+stories_completed: 23
+patterns: []
+---
+# Blog Articles Section - Progress Log
+
+## 2026-01-17 - US-001: Core Article Queries - List and Featured
+
+**Implemented:**
+- Created `convex/articles.ts` with two queries
+- `articles.list`: paginated query with cursor-based pagination, tag filtering, author/tag joins, ordered by publishedAt desc
+- `articles.listFeatured`: fetches featured articles (isFeatured=true) with author info, ordered by publishedAt desc
+- Comprehensive test suite with 19 tests covering edge cases
+
+**Files Changed:**
+- convex/articles.ts (new)
+- __tests__/convex/articles.test.ts (new)
+- convex/_generated/api.d.ts (updated by codegen)
+
+**Learnings:**
+- Convex indexes return data in ascending order by default; need to sort descending after collection
+- Used post-query filtering for tag filtering since tags is an array field
+- Author and tag joins handled gracefully when records are deleted (return null/filter out)
+- Cursor-based pagination uses publishedAt timestamp for efficient keyset pagination
+
+---
+
+## 2026-01-17 - US-002: Article Detail Query - Get By Slug
+
+**Implemented:**
+- `articles.getBySlug`: fetches single article by slug using by_slug index
+- Returns full article including content field, full author profile (displayName, slug, photoUrl, bio), and tags
+- Handles deleted authors (returns null) and tags (filters out) gracefully
+
+**Files Changed:**
+- convex/articles.ts (updated)
+- __tests__/convex/articles.test.ts (updated)
+
+**Learnings:**
+- Created separate helper for full author info vs minimal author info to keep response shapes clean
+- Index lookup with .unique() is efficient for slug-based queries
+
+---
+
+## 2026-01-17 - US-005: Install Markdown Rendering Dependencies
+
+**Implemented:**
+- Installed react-markdown@10.1.0, remark-gfm@4.0.1, rehype-sanitize@6.0.0, rehype-highlight@7.0.2
+- All packages compatible with React 19 and Next.js 16
+- Build and typecheck pass
+
+**Files Changed:**
+- package.json
+- bun.lock
+
+**Learnings:**
+- No peer dependency issues with current stack versions
+
+---
+
+## 2026-01-17 - US-006: ArticleContent Component - Markdown Renderer
+
+**Implemented:**
+- ArticleContent component using react-markdown with remark-gfm and rehype-sanitize
+- Custom component mappings: headings with anchor ids, external link detection, code styling
+- Syntax highlighting via rehype-highlight with github-dark theme
+- XSS protection through sanitization
+- Dark mode support with Tailwind prose classes
+- 21 comprehensive tests
+
+**Files Changed:**
+- components/articles/ArticleContent.tsx (new)
+- components/articles/index.ts (new)
+- __tests__/components/articles/ArticleContent.test.tsx (new)
+
+**Learnings:**
+- rehype-highlight splits code tokens for syntax highlighting, tests need to check textContent
+- Template literals in tests preserve newlines; string literals with \n don't
+
+---
+
+## 2026-01-17 - US-007: ArticleMeta Component - Author Attribution
+
+**Implemented:**
+- ArticleMeta component with author photo, name, and formatted date
+- Uses ProfilePhoto component for avatar display
+- Links author name to /profiles/[slug]
+- Handles null author with "Unknown Author" fallback
+- Size variants (sm/md) for different contexts
+- Intl.DateTimeFormat for locale-aware date formatting
+- 10 tests
+
+**Files Changed:**
+- components/articles/ArticleMeta.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/ArticleMeta.test.tsx (new)
+
+**Learnings:**
+- Mocking components in tests allows isolation and faster execution
+
+---
+
+## 2026-01-17 - US-008: ArticleCard Component - Preview Card
+
+**Implemented:**
+- ArticleCard component with title, excerpt, author info, tags, and publication date
+- Default and featured variants (featured has larger image area)
+- Uses ArticleMeta for author/date, TagBadge for tag display
+- Line-clamp for excerpt truncation
+- Hover effects with shadow and title color change
+- Links to /articles/[slug]
+- 12 tests
+
+**Files Changed:**
+- components/articles/ArticleCard.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/ArticleCard.test.tsx (new)
+
+**Learnings:**
+- Line-clamp utility classes handle text truncation elegantly
+
+---
+
+## 2026-01-17 - US-009: ArticleList Component - Paginated List
+
+**Implemented:**
+- ArticleList component with Load More pagination
+- Uses useReducer for state management (cursor, loaded pages, loading state)
+- Accumulates articles across pages for seamless pagination
+- Skeleton loading state with animated placeholders
+- Empty state message when no articles
+- Optional tagId prop for filtering
+- Grid layout responsive to viewport (1/2/3 columns)
+- 11 tests
+
+**Files Changed:**
+- components/articles/ArticleList.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/ArticleList.test.tsx (new)
+
+**Learnings:**
+- React hooks linter is strict about state updates in effects and ref access during render
+- useReducer pattern avoids setState-in-effect anti-pattern
+- processedResultId tracking prevents duplicate dispatches
+- useMemo must be called before any conditional returns
+
+---
+
+## 2026-01-17 - US-004: Admin Article CRUD Mutations
+
+**Implemented:**
+- `generateSlug(title)`: Creates URL-friendly slugs from titles (lowercase, alphanumeric + hyphens, max 50 chars)
+- `validateSlug(slug)`: Validates slugs (2-50 chars, pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`)
+- `articleSlugExists(ctx, slug, excludeId?)`: Checks for slug uniqueness
+- `articles.listAdmin`: Admin-only query returning all articles with author info
+- `articles.get`: Admin-only query returning raw article data for editing
+- `articles.create`: Admin mutation with slug generation, validation, and uniqueness check
+- `articles.update`: Admin mutation with partial updates and slug re-validation
+- `articles.remove`: Admin mutation for article deletion
+- 36 new tests covering all admin operations
+
+**Files Changed:**
+- convex/articles.ts (updated with admin CRUD operations)
+- __tests__/convex/articles.test.ts (updated with 36 new tests)
+- components/articles/ArticleContent.tsx (fixed eslint warning for img element)
+
+**Learnings:**
+- Followed existing patterns from tags.ts for admin CRUD operations
+- Slug validation must allow standalone words without hyphens (e.g., "test")
+- Using `excludeId` parameter in slug existence check allows updating without false conflicts
+- Test helpers like `setupAdminUser` provide actual IDs needed for validators
+
+---
+
+## 2026-01-17 - US-010: ArticleFilters Component - Tag Filtering
+
+**Implemented:**
+- ArticleFilters component with tag-based filtering
+- "All Articles" button for clearing filter
+- Tags displayed only if contentCount > 0
+- Horizontal scrollable container for mobile
+- Selected state styling (blue background)
+- 11 tests
+
+**Files Changed:**
+- components/articles/ArticleFilters.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/ArticleFilters.test.tsx (new)
+
+**Learnings:**
+- Mock Convex types with `as Id<"tableName">` for test data
+
+---
+
+## 2026-01-17 - US-011: FeaturedArticles Component
+
+**Implemented:**
+- FeaturedArticles component with distinct visual styling
+- Gradient background section with "Featured" heading
+- Maximum 3 articles displayed using ArticleCard with featured variant
+- Returns null when no articles
+- 8 tests
+
+**Files Changed:**
+- components/articles/FeaturedArticles.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/FeaturedArticles.test.tsx (new)
+
+**Learnings:**
+- Interface types should match actual API return shapes (excerpt optional, author slug optional)
+
+---
+
+## 2026-01-17 - US-012: Blog Listing Page
+
+**Implemented:**
+- Blog listing page with full functionality
+- Featured articles section (hidden when filtering)
+- Tag filter controls with state management
+- Paginated article list
+- Page header with title and description
+
+**Files Changed:**
+- app/blog/page.tsx (updated from placeholder)
+- convex/articles.ts (updated listFeatured to include tags)
+
+**Learnings:**
+- Need to update backend queries when component requirements evolve
+- FeaturedArticles requires tags for ArticleCard rendering
+
+---
+
+## 2026-01-17 - US-013: Individual Article Page
+
+**Implemented:**
+- Article detail page with slug-based routing
+- ArticleHeader component for title, meta, and tags
+- Loading skeleton state
+- 404 handling with notFound() and custom not-found.tsx
+- Substack link section when substackUrl exists
+- Next.js 16 params handling with Promise and use()
+- 6 tests for ArticleHeader
+
+**Files Changed:**
+- app/blog/[slug]/page.tsx (new)
+- app/blog/[slug]/not-found.tsx (new)
+- components/articles/ArticleHeader.tsx (new)
+- components/articles/index.ts (updated)
+- __tests__/components/articles/ArticleHeader.test.tsx (new)
+
+**Learnings:**
+- Next.js 16 uses Promise for params, requiring use() hook to unwrap
+- header role="banner" provides semantic structure for article headers
+
+---
+
+## 2026-01-17 - US-015: Admin Article List Page
+
+**Implemented:**
+- Admin article list page with table layout
+- Columns: Title, Author, Date, Featured, Actions
+- Delete button with confirmation dialog
+- Featured badge styling
+- Link to create new article
+- Edit and delete actions per row
+
+**Files Changed:**
+- app/admin/articles/page.tsx (new)
+
+**Learnings:**
+- Followed existing admin/profiles pattern for consistency
+- Used useMutation for delete with loading state tracking
+
+---
+
+## 2026-01-17 - US-016: Article Editor Component
+
+**Implemented:**
+- ArticleEditor component with all form fields
+- Auto-generated slug from title (with manual override)
+- Author dropdown from published profiles
+- Tag multi-select with toggle buttons
+- Live markdown preview using MarkdownPreview
+- Split layout on desktop (form | preview)
+- Collapsible preview on mobile
+- Validation with error messages
+- Loading state during submission
+- MarkdownPreview component
+
+**Files Changed:**
+- components/articles/ArticleEditor.tsx (new)
+- components/articles/MarkdownPreview.tsx (new)
+- components/articles/index.ts (updated)
+
+**Learnings:**
+- useEffect with slugEdited flag allows auto-slug while preserving manual edits
+- Form validation returns boolean for early submission exit
+
+---
+
+## 2026-01-17 - US-017: Create Article Page
+
+**Implemented:**
+- Create article page with ArticleEditor
+- Admin authentication check
+- Success redirect to admin articles list
+- Page header and back link
+
+**Files Changed:**
+- app/admin/articles/new/page.tsx (new)
+
+**Learnings:**
+- Router push for navigation after successful creation
+
+---
+
+## 2026-01-17 - US-018: Edit Article Page
+
+**Implemented:**
+- Edit article page with ArticleEditor pre-filled
+- Admin authentication check
+- Article fetch with loading state
+- 404 handling with custom not-found page
+- Success redirect to admin articles list
+
+**Files Changed:**
+- app/admin/articles/[id]/edit/page.tsx (new)
+- app/admin/articles/[id]/edit/not-found.tsx (new)
+
+**Learnings:**
+- Pass existing article data to ArticleEditor for edit mode
+- notFound() from next/navigation handles 404 display
+
+---
+
+## 2026-01-17 - US-003: Related Articles Query
+
+**Implemented:**
+- `articles.getRelated` query for finding related articles by shared tags
+- Accepts articleId and optional limit (default 3)
+- Fetches current article's tags, then queries recent articles (limited to 50 for performance)
+- Calculates sharedTagCount for each candidate article
+- Sorts by sharedTagCount descending, then by publishedAt descending
+- Falls back to same-author articles if no shared tags found
+- Returns empty array if no related content exists
+- Returns: _id, title, slug, excerpt, publishedAt, sharedTagCount
+- 11 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- convex/articles.ts (added getRelated query with relatedArticleValidator)
+- __tests__/convex/articles.test.ts (added 11 tests for getRelated)
+
+**Learnings:**
+- Used Set for efficient tag matching when comparing current article tags with candidate articles
+- Fallback logic: when article has no tags OR no articles share tags, returns same-author articles
+- sharedTagCount=0 for fallback results (same-author but no shared tags)
+- Need to handle case where article doesn't exist (return empty array)
+
+---
+
+## 2026-01-17 - US-014: RelatedArticles Component
+
+**Implemented:**
+- `RelatedArticles` component for displaying related articles at the bottom of article pages
+- Uses `articles.getRelated` query with articleId prop
+- Displays up to 3 related articles in a responsive grid layout (1/2/3 columns)
+- Each article card shows title (as link), excerpt (if available), and formatted date
+- Section hidden when loading (undefined) or no related articles exist
+- Semantic section element with "Related Articles" heading
+- 9 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- components/articles/RelatedArticles.tsx (new)
+- components/articles/index.ts (updated to export RelatedArticles)
+- app/blog/[slug]/page.tsx (integrated RelatedArticles component)
+- __tests__/components/articles/RelatedArticles.test.tsx (new)
+
+**Learnings:**
+- Component follows existing patterns for loading/empty state handling (return null)
+- Reused formatDate utility within component for consistent date formatting
+- Grid layout provides good responsive display for varying numbers of related articles
+
+---
+
+## 2026-01-17 - US-019: Install RSS Parser Dependency
+
+**Implemented:**
+- Installed `rss-parser@3.13.0` for Substack RSS import functionality
+- Added import to `convex/articles.ts` to verify compatibility with Convex actions
+- Created `testRssParserImport` action to verify parser instantiation works in Convex runtime
+- Verified parser has expected methods (parseURL, parseString)
+
+**Files Changed:**
+- package.json (added rss-parser dependency)
+- convex/articles.ts (added Parser import and test action)
+- bun.lockb (updated)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (524 tests)
+- Package installed without peer dependency warnings or conflicts
+
+**Learnings:**
+- rss-parser v3.13.0 is compatible with Convex actions (Node.js runtime)
+- Import can be at module level for use in action handlers
+- Next story (US-020) will implement the actual parseRssFeed action that uses this parser
+
+---
+
+## 2026-01-17 - US-020: Substack RSS Parser Action
+
+**Implemented:**
+- `articles.parseRssFeed` action for parsing Substack RSS feed URLs
+- Validates URL format (must start with http:// or https://)
+- Requires admin role via internal query (`getProfileByTokenId`)
+- Configures rss-parser for Substack feeds (`content:encoded` custom field)
+- Returns array of parsed items with: title, content, publishedAt, substackUrl, excerpt, alreadyImported flag
+- Handles parsing errors gracefully with descriptive error messages
+- `articles.getExistingSubstackUrls` internal query for duplicate detection
+- `articles.getProfileByTokenId` internal query for role checking in actions
+- 5 new tests covering structure and duplicate detection logic
+
+**Files Changed:**
+- convex/articles.ts (added parseRssFeed action, getExistingSubstackUrls, getProfileByTokenId internal queries)
+- __tests__/convex/articles.test.ts (added 5 tests for RSS import functionality)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (529 tests)
+
+**Learnings:**
+- Convex actions need explicit type annotations to avoid circular type inference issues
+- Used `internal.articles.*` for calling internal queries from actions via `ctx.runQuery`
+- `ParsedRssItem` interface defined separately from validator for type safety
+- Auth in actions requires `ctx.auth.getUserIdentity()` and then a separate query to get profile
+- Internal queries must be defined before the action that references them (or use proper imports)
+
+---
+
+## 2026-01-17 - US-021: RSS Import Mutation
+
+**Implemented:**
+- `articles.importFromRss` mutation for importing selected articles from parsed RSS feed
+- Accepts items array (with title, content, publishedAt, substackUrl, optional excerpt), authorId, and optional tags
+- Requires admin role via `requireRole(ctx, ["admin"])`
+- Validates author exists and is published
+- Validates all tags exist if provided
+- Auto-generates slugs from titles using existing `generateSlug` function
+- Handles duplicate slugs by appending counter (e.g., "test-article-1", "test-article-2")
+- Skips articles with existing substackUrl to prevent duplicates
+- Auto-generates excerpt from first 160 chars of content if not provided
+- Returns `{ imported: number, skipped: number }` count summary
+- 16 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- convex/articles.ts (added importFromRss mutation with validators)
+- __tests__/convex/articles.test.ts (added 16 tests for importFromRss)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (545 tests)
+
+**Learnings:**
+- Batch imports need to track slugs within the batch to avoid conflicts when multiple items would generate the same slug
+- Existing URL check using Set provides O(1) lookup performance
+- Slug uniqueness handling follows pattern: base-slug, base-slug-1, base-slug-2, etc.
+- Author verification checks both existence and published status per specification
+
+---
+
+## 2026-01-17 - US-022: RSS Importer UI Component
+
+**Implemented:**
+- `RssImporter` component for importing articles from Substack RSS feeds
+- URL input with validation (requires http:// or https:// prefix)
+- Fetch button triggers `parseRssFeed` action
+- Loading state while parsing RSS feed
+- Preview list of parsed articles with checkboxes for selection
+- Already-imported articles displayed with disabled checkbox and "Already imported" badge
+- Author dropdown (required) populated from published profiles
+- Tags multi-select (optional) for applying to all imported articles
+- "Import Selected" button triggers `importFromRss` mutation
+- Success summary showing imported/skipped counts
+- Error handling for fetch and import failures
+- 20 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- components/articles/RssImporter.tsx (new)
+- components/articles/index.ts (updated to export RssImporter)
+- __tests__/components/articles/RssImporter.test.tsx (new)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/prd.json (marked passes: true)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (565 tests)
+
+**Learnings:**
+- Used existing patterns from ArticleEditor for form state management
+- Author dropdown only appears after successful fetch (progressive disclosure)
+- Followed TDD workflow: wrote 20 failing tests first, then implemented to make them pass
+- Mock patterns for useAction and useMutation from convex/react work consistently
+- Component handles state transitions cleanly: initial → fetching → preview → importing → success
+
+---
+
+## 2026-01-17 - US-023: RSS Import Admin Page
+
+**Implemented:**
+- Created `/admin/articles/import/page.tsx` - admin page for Substack RSS import
+- Client component with admin role authentication and authorization checks
+- Page header "Import from Substack" with back navigation to articles list
+- RssImporter component integration for complete import workflow
+- Loading state during profile fetch
+- ForbiddenPage fallback for non-admin users
+- Unit tests for page structure and authentication flow
+
+**Files Changed:**
+- app/admin/articles/import/page.tsx (new)
+- __tests__/app/admin/articles/import.test.tsx (new)
+
+**Learnings:**
+- Followed existing admin page patterns (articles/new, articles/[id]/edit) for consistency
+- Styling and layout mirrors other admin pages for visual coherence
+- Role-based access control handled on client-side with backend query enforcement
+- Test setup requires custom render from test-utils for proper environment
+
+---
+
+## Feature Complete
+
+All 23 user stories implemented successfully:
+
+**P0 (Foundation)**: US-001 ✓, US-002 ✓
+**P1 (Core Feature)**: US-004 ✓, US-005 ✓, US-006 ✓, US-007 ✓, US-008 ✓, US-009 ✓, US-012 ✓, US-013 ✓, US-015 ✓, US-016 ✓, US-017 ✓, US-018 ✓
+**P2 (Enhanced)**: US-003 ✓, US-010 ✓, US-014 ✓
+**P3 (Nice-to-have)**: US-011 ✓, US-019 ✓, US-020 ✓, US-021 ✓, US-022 ✓, US-023 ✓
+
+**Feature is feature-complete and ready for production testing.**
+
+---

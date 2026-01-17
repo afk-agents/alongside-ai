@@ -8,9 +8,12 @@
  * @module
  */
 
+import type * as articles from "../articles.js";
+import type * as articlesRss from "../articlesRss.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as profiles from "../profiles.js";
+import type * as seedFounders from "../seedFounders.js";
 import type * as tags from "../tags.js";
 import type * as users from "../users.js";
 
@@ -21,9 +24,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  articles: typeof articles;
+  articlesRss: typeof articlesRss;
   auth: typeof auth;
   http: typeof http;
   profiles: typeof profiles;
+  seedFounders: typeof seedFounders;
   tags: typeof tags;
   users: typeof users;
 }>;

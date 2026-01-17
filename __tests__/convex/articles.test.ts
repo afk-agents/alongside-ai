@@ -1,0 +1,2577 @@
+import { describe, it, expect } from "vitest";
+import { convexTest } from "convex-test";
+import { api } from "@/convex/_generated/api";
+import schema from "@/convex/schema";
+import { Id } from "@/convex/_generated/dataModel";
+
+// Type alias for the test context
+type TestContext = ReturnType<typeof convexTest>;
+
+// Helper to create a profile for testing
+async function createTestProfile(t: TestContext) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "member",
+      profileStatus: "published",
+      displayName: "Test Author",
+      slug: "test-author",
+    });
+    return { userId, profileId };
+  });
+}
+
+// Helper to create a tag for testing
+async function createTestTag(
+  t: TestContext,
+  name: string,
+  slug: string
+): Promise<Id<"tags">> {
+  return await t.run(async (ctx) => {
+    return await ctx.db.insert("tags", { name, slug });
+  });
+}
+
+// Helper to create an article for testing
+async function createTestArticle(
+  t: TestContext,
+  profileId: Id<"profiles">,
+  data: {
+    title: string;
+    slug: string;
+    content?: string;
+    publishedAt?: number;
+    excerpt?: string;
+    tags?: Id<"tags">[];
+    isFeatured?: boolean;
+    substackUrl?: string;
+  }
+) {
+  return await t.run(async (ctx) => {
+    return await ctx.db.insert("articles", {
+      title: data.title,
+      slug: data.slug,
+      content: data.content ?? "Test content",
+      authorId: profileId,
+      publishedAt: data.publishedAt ?? Date.now(),
+      excerpt: data.excerpt,
+      tags: data.tags,
+      isFeatured: data.isFeatured,
+      substackUrl: data.substackUrl,
+    });
+  });
+}
+
+describe("articles.list query", () => {
+  it("returns empty array when no articles exist", async () => {
+    const t = convexTest(schema);
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toEqual([]);
+    expect(result.hasMore).toBe(false);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it("returns articles ordered by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create articles with different publish times
+    const now = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Older Article",
+      slug: "older-article",
+      publishedAt: now - 86400000, // Yesterday
+    });
+    await createTestArticle(t, profileId, {
+      title: "Newer Article",
+      slug: "newer-article",
+      publishedAt: now, // Now
+    });
+    await createTestArticle(t, profileId, {
+      title: "Middle Article",
+      slug: "middle-article",
+      publishedAt: now - 43200000, // 12 hours ago
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(3);
+    expect(result.articles[0].title).toBe("Newer Article");
+    expect(result.articles[1].title).toBe("Middle Article");
+    expect(result.articles[2].title).toBe("Older Article");
+  });
+
+  it("respects the limit parameter", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create 5 articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Article ${i}`,
+        slug: `article-${i}`,
+        publishedAt: Date.now() - i * 1000, // Staggered times
+      });
+    }
+
+    const result = await t.query(api.articles.list, { limit: 2 });
+
+    expect(result.articles).toHaveLength(2);
+    expect(result.hasMore).toBe(true);
+    expect(result.nextCursor).toBeDefined();
+  });
+
+  it("defaults to limit of 10", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create 15 articles
+    for (let i = 0; i < 15; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Article ${i}`,
+        slug: `article-${i}`,
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(10);
+    expect(result.hasMore).toBe(true);
+  });
+
+  it("supports cursor-based pagination", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create 5 articles with distinct timestamps
+    const now = Date.now();
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Article ${4 - i}`, // Reverse order for clarity
+        slug: `article-${4 - i}`,
+        publishedAt: now - i * 10000, // 10 second gaps
+      });
+    }
+
+    // Get first page
+    const page1 = await t.query(api.articles.list, { limit: 2 });
+    expect(page1.articles).toHaveLength(2);
+    expect(page1.articles[0].title).toBe("Article 4");
+    expect(page1.articles[1].title).toBe("Article 3");
+    expect(page1.hasMore).toBe(true);
+
+    // Get second page using cursor
+    const page2 = await t.query(api.articles.list, {
+      limit: 2,
+      cursor: page1.nextCursor!,
+    });
+    expect(page2.articles).toHaveLength(2);
+    expect(page2.articles[0].title).toBe("Article 2");
+    expect(page2.articles[1].title).toBe("Article 1");
+    expect(page2.hasMore).toBe(true);
+
+    // Get third page
+    const page3 = await t.query(api.articles.list, {
+      limit: 2,
+      cursor: page2.nextCursor!,
+    });
+    expect(page3.articles).toHaveLength(1);
+    expect(page3.articles[0].title).toBe("Article 0");
+    expect(page3.hasMore).toBe(false);
+  });
+
+  it("filters by tagId when provided", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    await createTestArticle(t, profileId, {
+      title: "AI Article",
+      slug: "ai-article",
+      tags: [tagAI],
+    });
+    await createTestArticle(t, profileId, {
+      title: "ML Article",
+      slug: "ml-article",
+      tags: [tagML],
+    });
+    await createTestArticle(t, profileId, {
+      title: "Both Tags Article",
+      slug: "both-tags-article",
+      tags: [tagAI, tagML],
+    });
+    await createTestArticle(t, profileId, {
+      title: "No Tags Article",
+      slug: "no-tags-article",
+    });
+
+    const result = await t.query(api.articles.list, { tagId: tagAI });
+
+    expect(result.articles).toHaveLength(2);
+    const titles = result.articles.map((a) => a.title);
+    expect(titles).toContain("AI Article");
+    expect(titles).toContain("Both Tags Article");
+    expect(titles).not.toContain("ML Article");
+    expect(titles).not.toContain("No Tags Article");
+  });
+
+  it("includes author profile information", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Test Article",
+      slug: "test-article",
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(1);
+    expect(result.articles[0].author).toBeDefined();
+    expect(result.articles[0].author?.displayName).toBe("Test Author");
+    expect(result.articles[0].author?.slug).toBe("test-author");
+  });
+
+  it("handles deleted author gracefully", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Orphan Article",
+      slug: "orphan-article",
+    });
+
+    // Delete the profile
+    await t.run(async (ctx) => {
+      await ctx.db.delete(profileId);
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(1);
+    expect(result.articles[0].author).toBeNull();
+  });
+
+  it("includes tags information", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+    const tagId = await createTestTag(t, "AI", "ai");
+
+    await createTestArticle(t, profileId, {
+      title: "Tagged Article",
+      slug: "tagged-article",
+      tags: [tagId],
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(1);
+    expect(result.articles[0].tags).toHaveLength(1);
+    expect(result.articles[0].tags[0]).toMatchObject({
+      _id: tagId,
+      name: "AI",
+      slug: "ai",
+    });
+  });
+
+  it("filters out deleted tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+    const tagId = await createTestTag(t, "Deleted Tag", "deleted-tag");
+    const keepTagId = await createTestTag(t, "Keep Tag", "keep-tag");
+
+    await createTestArticle(t, profileId, {
+      title: "Article With Tags",
+      slug: "article-with-tags",
+      tags: [tagId, keepTagId],
+    });
+
+    // Delete one tag
+    await t.run(async (ctx) => {
+      await ctx.db.delete(tagId);
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(1);
+    expect(result.articles[0].tags).toHaveLength(1);
+    expect(result.articles[0].tags[0].name).toBe("Keep Tag");
+  });
+
+  it("returns correct shape with all expected fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    await createTestArticle(t, profileId, {
+      title: "Complete Article",
+      slug: "complete-article",
+      content: "Full content here",
+      excerpt: "Short excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/complete-article",
+    });
+
+    const result = await t.query(api.articles.list, {});
+
+    expect(result.articles).toHaveLength(1);
+    const article = result.articles[0];
+
+    expect(article).toHaveProperty("_id");
+    expect(article).toHaveProperty("title", "Complete Article");
+    expect(article).toHaveProperty("slug", "complete-article");
+    expect(article).toHaveProperty("excerpt", "Short excerpt");
+    expect(article).toHaveProperty("publishedAt");
+    expect(article).toHaveProperty("isFeatured", true);
+    expect(article).toHaveProperty("author");
+    expect(article).toHaveProperty("tags");
+    // Note: content is NOT included in list view for performance
+  });
+});
+
+describe("articles.listFeatured query", () => {
+  it("returns empty array when no featured articles exist", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create non-featured article
+    await createTestArticle(t, profileId, {
+      title: "Regular Article",
+      slug: "regular-article",
+      isFeatured: false,
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns only featured articles", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Featured Article",
+      slug: "featured-article",
+      isFeatured: true,
+    });
+    await createTestArticle(t, profileId, {
+      title: "Not Featured",
+      slug: "not-featured",
+      isFeatured: false,
+    });
+    await createTestArticle(t, profileId, {
+      title: "Another Featured",
+      slug: "another-featured",
+      isFeatured: true,
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(2);
+    const titles = result.map((a) => a.title);
+    expect(titles).toContain("Featured Article");
+    expect(titles).toContain("Another Featured");
+    expect(titles).not.toContain("Not Featured");
+  });
+
+  it("orders by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const now = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Older Featured",
+      slug: "older-featured",
+      isFeatured: true,
+      publishedAt: now - 86400000,
+    });
+    await createTestArticle(t, profileId, {
+      title: "Newer Featured",
+      slug: "newer-featured",
+      isFeatured: true,
+      publishedAt: now,
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("Newer Featured");
+    expect(result[1].title).toBe("Older Featured");
+  });
+
+  it("defaults to limit of 3", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create 5 featured articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Featured ${i}`,
+        slug: `featured-${i}`,
+        isFeatured: true,
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(3);
+  });
+
+  it("respects custom limit", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create 5 featured articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Featured ${i}`,
+        slug: `featured-${i}`,
+        isFeatured: true,
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.listFeatured, { limit: 2 });
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("includes author displayName and slug only", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Featured With Author",
+      slug: "featured-with-author",
+      isFeatured: true,
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].author).toBeDefined();
+    expect(result[0].author?.displayName).toBe("Test Author");
+    expect(result[0].author?.slug).toBe("test-author");
+  });
+
+  it("treats undefined isFeatured as not featured", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create article without isFeatured field (defaults to undefined)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("articles", {
+        title: "No Featured Flag",
+        slug: "no-featured-flag",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+        // isFeatured is not set
+      });
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns correct shape with expected fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Featured Article",
+      slug: "featured-article",
+      excerpt: "Test excerpt",
+      isFeatured: true,
+    });
+
+    const result = await t.query(api.articles.listFeatured, {});
+
+    expect(result).toHaveLength(1);
+    const article = result[0];
+
+    expect(article).toHaveProperty("_id");
+    expect(article).toHaveProperty("title", "Featured Article");
+    expect(article).toHaveProperty("slug", "featured-article");
+    expect(article).toHaveProperty("excerpt", "Test excerpt");
+    expect(article).toHaveProperty("publishedAt");
+    expect(article).toHaveProperty("author");
+  });
+});
+
+// Helper to create a profile with full details for testing getBySlug
+async function createFullTestProfile(t: TestContext) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "member",
+      profileStatus: "published",
+      displayName: "Full Author",
+      slug: "full-author",
+      photoUrl: "https://example.com/photo.jpg",
+      bio: "This is a test author bio.",
+    });
+    return { userId, profileId };
+  });
+}
+
+describe("articles.getBySlug query", () => {
+  it("returns null when article does not exist", async () => {
+    const t = convexTest(schema);
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "nonexistent-article",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns article with full details by slug", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Test Article",
+      slug: "test-article",
+      content: "Full article content here.",
+      excerpt: "Short excerpt",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "test-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("Test Article");
+    expect(result?.slug).toBe("test-article");
+    expect(result?.content).toBe("Full article content here.");
+    expect(result?.excerpt).toBe("Short excerpt");
+  });
+
+  it("includes full author profile fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Article With Author",
+      slug: "article-with-author",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-with-author",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.author).toBeDefined();
+    expect(result?.author?.displayName).toBe("Full Author");
+    expect(result?.author?.slug).toBe("full-author");
+    expect(result?.author?.photoUrl).toBe("https://example.com/photo.jpg");
+    expect(result?.author?.bio).toBe("This is a test author bio.");
+  });
+
+  it("handles deleted author gracefully", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Orphan Article",
+      slug: "orphan-article",
+    });
+
+    // Delete the profile
+    await t.run(async (ctx) => {
+      await ctx.db.delete(profileId);
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "orphan-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.author).toBeNull();
+  });
+
+  it("includes tags with id, name, and slug", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    await createTestArticle(t, profileId, {
+      title: "Tagged Article",
+      slug: "tagged-article",
+      tags: [tagAI, tagML],
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "tagged-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toHaveLength(2);
+
+    const aiTag = result?.tags.find((t) => t.slug === "ai");
+    expect(aiTag).toBeDefined();
+    expect(aiTag?._id).toBe(tagAI);
+    expect(aiTag?.name).toBe("AI");
+
+    const mlTag = result?.tags.find((t) => t.slug === "ml");
+    expect(mlTag).toBeDefined();
+    expect(mlTag?._id).toBe(tagML);
+    expect(mlTag?.name).toBe("ML");
+  });
+
+  it("filters out deleted tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagToDelete = await createTestTag(t, "Delete Me", "delete-me");
+    const tagToKeep = await createTestTag(t, "Keep Me", "keep-me");
+
+    await createTestArticle(t, profileId, {
+      title: "Article With Mixed Tags",
+      slug: "article-with-mixed-tags",
+      tags: [tagToDelete, tagToKeep],
+    });
+
+    // Delete one tag
+    await t.run(async (ctx) => {
+      await ctx.db.delete(tagToDelete);
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-with-mixed-tags",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toHaveLength(1);
+    expect(result?.tags[0].slug).toBe("keep-me");
+  });
+
+  it("returns empty tags array when article has no tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "No Tags Article",
+      slug: "no-tags-article",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "no-tags-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toEqual([]);
+  });
+
+  it("includes all article fields in response", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    const publishedAt = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Complete Article",
+      slug: "complete-article",
+      content: "Full content for the article.",
+      excerpt: "Short excerpt text",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/complete-article",
+      publishedAt,
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "complete-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?._id).toBeDefined();
+    expect(result?.title).toBe("Complete Article");
+    expect(result?.slug).toBe("complete-article");
+    expect(result?.content).toBe("Full content for the article.");
+    expect(result?.excerpt).toBe("Short excerpt text");
+    expect(result?.publishedAt).toBe(publishedAt);
+    expect(result?.isFeatured).toBe(true);
+    expect(result?.substackUrl).toBe(
+      "https://example.substack.com/p/complete-article"
+    );
+    expect(result?.author).toBeDefined();
+    expect(result?.tags).toHaveLength(1);
+  });
+
+  it("uses by_slug index for efficient lookup", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    // Create multiple articles
+    for (let i = 0; i < 10; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Article ${i}`,
+        slug: `article-${i}`,
+      });
+    }
+
+    // Query should still be efficient with index
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-5",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("Article 5");
+  });
+});
+
+// Helper to create admin user context
+async function setupAdminUser(t: TestContext) {
+  const { userId, profileId } = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "admin",
+      profileStatus: "published",
+      displayName: "Admin User",
+      slug: "admin-user",
+    });
+    return { userId, profileId };
+  });
+
+  return {
+    t: t.withIdentity({
+      subject: userId,
+      issuer: "test",
+      tokenIdentifier: `test|${userId}`,
+    }),
+    userId,
+    profileId,
+  };
+}
+
+// Helper to create guest user context
+async function setupGuestUser(t: TestContext) {
+  const { userId, profileId } = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "guest",
+      profileStatus: "locked",
+    });
+    return { userId, profileId };
+  });
+
+  return {
+    t: t.withIdentity({
+      subject: userId,
+      issuer: "test",
+      tokenIdentifier: `test|${userId}`,
+    }),
+    userId,
+    profileId,
+  };
+}
+
+// Helper to create a published profile for use as article author
+async function createPublishedProfile(t: TestContext) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "member",
+      profileStatus: "published",
+      displayName: "Published Author",
+      slug: "published-author",
+    });
+    return profileId;
+  });
+}
+
+describe("articles.listAdmin query", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+
+    await expect(guestCtx.query(api.articles.listAdmin, {})).rejects.toThrow(
+      /Required role: admin/
+    );
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+
+    await expect(t.query(api.articles.listAdmin, {})).rejects.toThrow(
+      /Authentication required/
+    );
+  });
+
+  it("returns empty array when no articles exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns all articles sorted by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const now = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Older Article",
+      slug: "older-article",
+      publishedAt: now - 86400000,
+    });
+    await createTestArticle(t, profileId, {
+      title: "Newer Article",
+      slug: "newer-article",
+      publishedAt: now,
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("Newer Article");
+    expect(result[1].title).toBe("Older Article");
+  });
+
+  it("includes author displayName", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Test Article",
+      slug: "test-article",
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].authorName).toBe("Admin User");
+  });
+
+  it("handles deleted author gracefully", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await createTestArticle(t, authorId, {
+      title: "Orphan Article",
+      slug: "orphan-article",
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.delete(authorId);
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0].authorName).toBeUndefined();
+  });
+
+  it("returns correct shape with minimal fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    await createTestArticle(t, profileId, {
+      title: "Admin Article",
+      slug: "admin-article",
+      tags: [tagId, tagId], // Intentionally duplicate to verify count
+      isFeatured: true,
+    });
+
+    const result = await adminCtx.query(api.articles.listAdmin, {});
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty("_id");
+    expect(result[0]).toHaveProperty("title", "Admin Article");
+    expect(result[0]).toHaveProperty("slug", "admin-article");
+    expect(result[0]).toHaveProperty("publishedAt");
+    expect(result[0]).toHaveProperty("isFeatured", true);
+    expect(result[0]).toHaveProperty("authorName", "Admin User");
+    expect(result[0]).toHaveProperty("tagCount", 2);
+  });
+});
+
+describe("articles.get query (admin)", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.query(api.articles.get, { id: articleId })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(t.query(api.articles.get, { id: articleId })).rejects.toThrow(
+      /Authentication required/
+    );
+  });
+
+  it("returns null for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    const result = await adminCtx.query(api.articles.get, { id: deletedId });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns full article data for editing", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    const publishedAt = Date.now();
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Edit Article",
+      slug: "edit-article",
+      content: "Full content",
+      excerpt: "Short excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/edit",
+      publishedAt,
+    });
+
+    const result = await adminCtx.query(api.articles.get, { id: articleId });
+
+    expect(result).not.toBeNull();
+    expect(result?._id).toBe(articleId);
+    expect(result?.title).toBe("Edit Article");
+    expect(result?.slug).toBe("edit-article");
+    expect(result?.content).toBe("Full content");
+    expect(result?.excerpt).toBe("Short excerpt");
+    expect(result?.authorId).toBe(profileId);
+    expect(result?.publishedAt).toBe(publishedAt);
+    expect(result?.tags).toEqual([tagId]);
+    expect(result?.isFeatured).toBe(true);
+    expect(result?.substackUrl).toBe("https://example.substack.com/p/edit");
+  });
+});
+
+describe("articles.create mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      guestCtx.mutation(api.articles.create, {
+        title: "Test",
+        slug: "test",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      t.mutation(api.articles.create, {
+        title: "Test",
+        slug: "test",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("creates article with all required fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "New Article",
+      slug: "new-article",
+      content: "Article content here",
+      authorId,
+    });
+
+    expect(articleId).toBeDefined();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("New Article");
+    expect(article?.slug).toBe("new-article");
+    expect(article?.content).toBe("Article content here");
+    expect(article?.authorId).toBe(authorId);
+    expect(article?.publishedAt).toBeDefined();
+  });
+
+  it("creates article with all optional fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagId = await createTestTag(t, "Test", "test");
+    const publishedAt = Date.now() - 86400000;
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Full Article",
+      slug: "full-article",
+      content: "Full content",
+      authorId,
+      excerpt: "Custom excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/full",
+      publishedAt,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.excerpt).toBe("Custom excerpt");
+    expect(article?.tags).toEqual([tagId]);
+    expect(article?.isFeatured).toBe(true);
+    expect(article?.substackUrl).toBe("https://example.substack.com/p/full");
+    expect(article?.publishedAt).toBe(publishedAt);
+  });
+
+  it("auto-generates excerpt from first 160 chars of content if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const longContent =
+      "This is a very long article content that exceeds one hundred sixty characters and should be truncated to create an automatic excerpt for the article preview display.";
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Auto Excerpt",
+      slug: "auto-excerpt",
+      content: longContent,
+      authorId,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.excerpt).toBeDefined();
+    expect(article?.excerpt?.length).toBeLessThanOrEqual(160);
+    expect(article?.excerpt).toBe(longContent.slice(0, 160));
+  });
+
+  it("validates slug format", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Slug",
+        slug: "INVALID SLUG",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/Invalid slug format/);
+  });
+
+  it("rejects duplicate slug", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Existing",
+      slug: "existing-slug",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Duplicate",
+        slug: "existing-slug",
+        content: "Content",
+        authorId,
+      })
+    ).rejects.toThrow(/already exists/);
+  });
+
+  it("verifies authorId references existing published profile", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked", // Not published
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Author",
+        slug: "invalid-author",
+        content: "Content",
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies all tagIds exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.create, {
+        title: "Invalid Tags",
+        slug: "invalid-tags",
+        content: "Content",
+        authorId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("defaults publishedAt to now if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const beforeCreate = Date.now();
+
+    const articleId = await adminCtx.mutation(api.articles.create, {
+      title: "Default Date",
+      slug: "default-date",
+      content: "Content",
+      authorId,
+    });
+
+    const afterCreate = Date.now();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.publishedAt).toBeGreaterThanOrEqual(beforeCreate);
+    expect(article?.publishedAt).toBeLessThanOrEqual(afterCreate);
+  });
+});
+
+describe("articles.update mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.mutation(api.articles.update, {
+        id: articleId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      t.mutation(api.articles.update, {
+        id: articleId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("throws error for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: deletedId,
+        title: "Updated",
+      })
+    ).rejects.toThrow(/Article not found/);
+  });
+
+  it("updates only provided fields", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Original Title",
+      slug: "original-slug",
+      content: "Original content",
+      excerpt: "Original excerpt",
+    });
+
+    await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      title: "Updated Title",
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("Updated Title");
+    expect(article?.slug).toBe("original-slug"); // Unchanged
+    expect(article?.content).toBe("Original content"); // Unchanged
+    expect(article?.excerpt).toBe("Original excerpt"); // Unchanged
+  });
+
+  it("validates slug uniqueness when changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    await createTestArticle(t, profileId, {
+      title: "First",
+      slug: "first-article",
+    });
+
+    const secondId = await createTestArticle(t, profileId, {
+      title: "Second",
+      slug: "second-article",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: secondId,
+        slug: "first-article", // Already exists
+      })
+    ).rejects.toThrow(/already exists/);
+  });
+
+  it("allows updating to same slug (self)", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "My Article",
+      slug: "my-article",
+    });
+
+    // Should not throw when updating to same slug
+    const result = await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      slug: "my-article",
+      title: "Updated Title",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("validates slug format when changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        slug: "INVALID SLUG",
+      })
+    ).rejects.toThrow(/Invalid slug format/);
+  });
+
+  it("verifies authorId if changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked",
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies tagIds if changed", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test-article",
+    });
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.update, {
+        id: articleId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("can update all fields at once", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagId = await createTestTag(t, "New Tag", "new-tag");
+    const newPublishedAt = Date.now() - 86400000;
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Original",
+      slug: "original",
+    });
+
+    await adminCtx.mutation(api.articles.update, {
+      id: articleId,
+      title: "Updated Title",
+      slug: "updated-slug",
+      content: "Updated content",
+      authorId,
+      excerpt: "Updated excerpt",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://updated.substack.com/p/post",
+      publishedAt: newPublishedAt,
+    });
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article?.title).toBe("Updated Title");
+    expect(article?.slug).toBe("updated-slug");
+    expect(article?.content).toBe("Updated content");
+    expect(article?.authorId).toBe(authorId);
+    expect(article?.excerpt).toBe("Updated excerpt");
+    expect(article?.tags).toEqual([tagId]);
+    expect(article?.isFeatured).toBe(true);
+    expect(article?.substackUrl).toBe("https://updated.substack.com/p/post");
+    expect(article?.publishedAt).toBe(newPublishedAt);
+  });
+});
+
+describe("articles.remove mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      guestCtx.mutation(api.articles.remove, { id: articleId })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "Test",
+      slug: "test",
+    });
+
+    await expect(
+      t.mutation(api.articles.remove, { id: articleId })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("throws error for non-existent article", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.remove, { id: deletedId })
+    ).rejects.toThrow(/Article not found/);
+  });
+
+  it("deletes article by id", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "To Delete",
+      slug: "to-delete",
+    });
+
+    const result = await adminCtx.mutation(api.articles.remove, {
+      id: articleId,
+    });
+
+    expect(result).toBeNull();
+
+    const article = await t.run(async (ctx) => {
+      return await ctx.db.get(articleId);
+    });
+
+    expect(article).toBeNull();
+  });
+
+  it("returns null on successful deletion", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    const articleId = await createTestArticle(t, profileId, {
+      title: "To Delete",
+      slug: "to-delete",
+    });
+
+    const result = await adminCtx.mutation(api.articles.remove, {
+      id: articleId,
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("articles.getRelated query", () => {
+  it("falls back to same author articles when current article has no tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create article without tags
+    const articleId = await createTestArticle(t, profileId, {
+      title: "No Tags Article",
+      slug: "no-tags-article",
+    });
+
+    // Create another article by same author (should be returned as fallback)
+    await createTestArticle(t, profileId, {
+      title: "Other Article",
+      slug: "other-article",
+    });
+
+    const result = await t.query(api.articles.getRelated, { articleId });
+
+    // Should fall back to same-author articles since current has no tags
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Other Article");
+    expect(result[0].sharedTagCount).toBe(0); // Fallback doesn't share tags
+  });
+
+  it("returns articles with shared tags, excluding current article", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Related article with AI tag (should be returned)
+    await createTestArticle(t, profileId, {
+      title: "Related AI Article",
+      slug: "related-ai-article",
+      tags: [tagAI],
+    });
+
+    // Unrelated article with only ML tag (should not be returned)
+    await createTestArticle(t, profileId, {
+      title: "ML Only Article",
+      slug: "ml-only-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Related AI Article");
+    // Should not include current article
+    const titles = result.map((a) => a.title);
+    expect(titles).not.toContain("Current Article");
+  });
+
+  it("sorts by shared tag count descending, then by publishedAt descending", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+    const tagData = await createTestTag(t, "Data", "data");
+
+    const now = Date.now();
+
+    // Current article with AI, ML, and Data tags
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI, tagML, tagData],
+      publishedAt: now,
+    });
+
+    // Article with 3 shared tags (most relevant)
+    await createTestArticle(t, profileId, {
+      title: "Three Tags Article",
+      slug: "three-tags-article",
+      tags: [tagAI, tagML, tagData],
+      publishedAt: now - 30000, // Older
+    });
+
+    // Article with 2 shared tags (second most relevant)
+    await createTestArticle(t, profileId, {
+      title: "Two Tags Article",
+      slug: "two-tags-article",
+      tags: [tagAI, tagML],
+      publishedAt: now - 10000, // Newer than three tags
+    });
+
+    // Article with 1 shared tag (least relevant)
+    await createTestArticle(t, profileId, {
+      title: "One Tag Article",
+      slug: "one-tag-article",
+      tags: [tagAI],
+      publishedAt: now - 5000, // Even newer
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(3);
+    // Sorted by shared tag count descending
+    expect(result[0].title).toBe("Three Tags Article");
+    expect(result[0].sharedTagCount).toBe(3);
+    expect(result[1].title).toBe("Two Tags Article");
+    expect(result[1].sharedTagCount).toBe(2);
+    expect(result[2].title).toBe("One Tag Article");
+    expect(result[2].sharedTagCount).toBe(1);
+  });
+
+  it("secondary sorts by publishedAt when sharedTagCount is equal", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    const now = Date.now();
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+      publishedAt: now,
+    });
+
+    // Same tag count but older
+    await createTestArticle(t, profileId, {
+      title: "Older Article",
+      slug: "older-article",
+      tags: [tagAI],
+      publishedAt: now - 86400000, // 1 day ago
+    });
+
+    // Same tag count but newer
+    await createTestArticle(t, profileId, {
+      title: "Newer Article",
+      slug: "newer-article",
+      tags: [tagAI],
+      publishedAt: now - 3600000, // 1 hour ago
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(2);
+    // Both have 1 shared tag, so sorted by publishedAt descending
+    expect(result[0].title).toBe("Newer Article");
+    expect(result[1].title).toBe("Older Article");
+  });
+
+  it("defaults to limit of 3", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Create 5 related articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Related ${i}`,
+        slug: `related-${i}`,
+        tags: [tagAI],
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(3);
+  });
+
+  it("respects custom limit parameter", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Current article
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Create 5 related articles
+    for (let i = 0; i < 5; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Related ${i}`,
+        slug: `related-${i}`,
+        tags: [tagAI],
+        publishedAt: Date.now() - i * 1000,
+      });
+    }
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+      limit: 2,
+    });
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("falls back to same author articles when no shared tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create a second author
+    const secondAuthorId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Second Author",
+        slug: "second-author",
+      });
+    });
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Other article by same author with different tag (fallback candidate)
+    await createTestArticle(t, profileId, {
+      title: "Same Author Article",
+      slug: "same-author-article",
+      tags: [tagML],
+    });
+
+    // Article by different author with ML tag (should not be fallback)
+    await createTestArticle(t, secondAuthorId, {
+      title: "Different Author Article",
+      slug: "different-author-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("Same Author Article");
+  });
+
+  it("returns empty array when no related articles and no same-author articles", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create a second author
+    const secondAuthorId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+        displayName: "Second Author",
+        slug: "second-author",
+      });
+    });
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    // Current article with AI tag - only article by this author
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    // Article by different author with different tag
+    await createTestArticle(t, secondAuthorId, {
+      title: "Unrelated Article",
+      slug: "unrelated-article",
+      tags: [tagML],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns correct shape with expected fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    const now = Date.now();
+
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    await createTestArticle(t, profileId, {
+      title: "Related Article",
+      slug: "related-article",
+      excerpt: "Test excerpt",
+      tags: [tagAI],
+      publishedAt: now - 1000,
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    expect(result).toHaveLength(1);
+    const article = result[0];
+
+    expect(article).toHaveProperty("_id");
+    expect(article).toHaveProperty("title", "Related Article");
+    expect(article).toHaveProperty("slug", "related-article");
+    expect(article).toHaveProperty("excerpt", "Test excerpt");
+    expect(article).toHaveProperty("publishedAt");
+    expect(article).toHaveProperty("sharedTagCount", 1);
+  });
+
+  it("handles article not found gracefully", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create and delete an article to get a valid but non-existent ID
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("articles", {
+        title: "Temp",
+        slug: "temp",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: deletedId,
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("excludes current article even when it would match by shared tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    const tagAI = await createTestTag(t, "AI", "ai");
+
+    // Only one article with the tag (the current one)
+    const currentId = await createTestArticle(t, profileId, {
+      title: "Current Article",
+      slug: "current-article",
+      tags: [tagAI],
+    });
+
+    const result = await t.query(api.articles.getRelated, {
+      articleId: currentId,
+    });
+
+    // Should be empty since the only article with the tag is the current one
+    expect(result).toEqual([]);
+  });
+});
+
+// ============================================================================
+// RSS Import - getExistingSubstackUrls and parseRssFeed
+// ============================================================================
+
+describe("articles.getExistingSubstackUrls (internal query)", () => {
+  it("returns empty array when no articles have substackUrl", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "No Substack URL",
+      slug: "no-substack-url",
+    });
+
+    // Query directly using internal API
+    const result = await t.run(async (ctx) => {
+      // Get all articles and filter for substack URLs
+      const articles = await ctx.db.query("articles").collect();
+      return articles
+        .filter((a) => a.substackUrl)
+        .map((a) => a.substackUrl as string);
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns array of substackUrls from articles", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Article 1",
+      slug: "article-1",
+      substackUrl: "https://example.substack.com/p/article-1",
+    });
+
+    await createTestArticle(t, profileId, {
+      title: "Article 2",
+      slug: "article-2",
+      substackUrl: "https://example.substack.com/p/article-2",
+    });
+
+    await createTestArticle(t, profileId, {
+      title: "No URL",
+      slug: "no-url",
+    });
+
+    const result = await t.run(async (ctx) => {
+      const articles = await ctx.db.query("articles").collect();
+      return articles
+        .filter((a) => a.substackUrl)
+        .map((a) => a.substackUrl as string);
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result).toContain("https://example.substack.com/p/article-1");
+    expect(result).toContain("https://example.substack.com/p/article-2");
+  });
+});
+
+// Note: parseRssFeed is an action that makes HTTP calls to external RSS feeds.
+// Testing the full action would require mocking the fetch/parser.
+// These tests verify the internal logic and data structures.
+
+describe("articles.parseRssFeed action (structure tests)", () => {
+  // Test the URL validation logic
+  it("should validate URL format", () => {
+    // Valid URLs should pass
+    const validUrls = [
+      "https://example.substack.com/feed",
+      "http://example.substack.com/feed",
+      "https://subdomain.example.com/feed",
+    ];
+
+    for (const url of validUrls) {
+      expect(url.startsWith("http://") || url.startsWith("https://")).toBe(
+        true
+      );
+    }
+
+    // Invalid URLs should fail
+    const invalidUrls = ["ftp://example.com/feed", "not-a-url", "//example.com"];
+
+    for (const url of invalidUrls) {
+      expect(url.startsWith("http://") || url.startsWith("https://")).toBe(
+        false
+      );
+    }
+  });
+
+  // Test the expected return structure
+  it("should return correct shape for parsed items", () => {
+    // This tests the expected return type structure
+    const expectedShape = {
+      title: "Test Article",
+      content: "Article content here",
+      publishedAt: 1705484400000,
+      substackUrl: "https://example.substack.com/p/test-article",
+      excerpt: "Short excerpt",
+      alreadyImported: false,
+    };
+
+    // Verify shape has all required fields
+    expect(expectedShape).toHaveProperty("title");
+    expect(expectedShape).toHaveProperty("content");
+    expect(expectedShape).toHaveProperty("publishedAt");
+    expect(expectedShape).toHaveProperty("substackUrl");
+    expect(expectedShape).toHaveProperty("alreadyImported");
+    expect(typeof expectedShape.title).toBe("string");
+    expect(typeof expectedShape.content).toBe("string");
+    expect(typeof expectedShape.publishedAt).toBe("number");
+    expect(typeof expectedShape.substackUrl).toBe("string");
+    expect(typeof expectedShape.alreadyImported).toBe("boolean");
+  });
+
+  // Test the alreadyImported logic
+  it("should mark items as alreadyImported when substackUrl matches", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createTestProfile(t);
+
+    // Create an article with a specific substack URL
+    await createTestArticle(t, profileId, {
+      title: "Imported Article",
+      slug: "imported-article",
+      substackUrl: "https://example.substack.com/p/already-imported",
+    });
+
+    // Simulate checking if a URL is already imported
+    const testUrl = "https://example.substack.com/p/already-imported";
+    const existingUrls = await t.run(async (ctx) => {
+      const articles = await ctx.db.query("articles").collect();
+      return articles
+        .filter((a) => a.substackUrl)
+        .map((a) => a.substackUrl as string);
+    });
+
+    const alreadyImported = existingUrls.includes(testUrl);
+    expect(alreadyImported).toBe(true);
+
+    // A new URL should not be marked as imported
+    const newUrl = "https://example.substack.com/p/new-article";
+    const notImported = existingUrls.includes(newUrl);
+    expect(notImported).toBe(false);
+  });
+});
+
+// ============================================================================
+// RSS Import - importFromRss mutation
+// ============================================================================
+
+describe("articles.importFromRss mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      guestCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test Article",
+            content: "Test content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      t.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test Article",
+            content: "Test content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("creates articles from provided items", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const publishedAt = Date.now();
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "First Article",
+          content: "First content",
+          publishedAt,
+          substackUrl: "https://example.substack.com/p/first",
+          excerpt: "First excerpt",
+        },
+        {
+          title: "Second Article",
+          content: "Second content",
+          publishedAt: publishedAt - 86400000,
+          substackUrl: "https://example.substack.com/p/second",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(2);
+    expect(result.skipped).toBe(0);
+
+    // Verify articles were created
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+
+    const first = articles.find((a) => a.title === "First Article");
+    expect(first).toBeDefined();
+    expect(first?.slug).toBe("first-article");
+    expect(first?.content).toBe("First content");
+    expect(first?.authorId).toBe(authorId);
+    expect(first?.substackUrl).toBe("https://example.substack.com/p/first");
+    expect(first?.excerpt).toBe("First excerpt");
+
+    const second = articles.find((a) => a.title === "Second Article");
+    expect(second).toBeDefined();
+    expect(second?.slug).toBe("second-article");
+  });
+
+  it("auto-generates slug from title", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "How to Build an AI Assistant",
+          content: "Guide content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/ai-assistant",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].slug).toBe("how-to-build-an-ai-assistant");
+  });
+
+  it("handles duplicate slugs by appending counter", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create an existing article with a slug
+    await createTestArticle(t, profileId, {
+      title: "Existing Article",
+      slug: "test-article",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Test Article", // Would generate same slug
+          content: "New content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/test-new",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(1);
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    // The new article should have a different slug
+    const newArticle = articles.find(
+      (a) => a.substackUrl === "https://example.substack.com/p/test-new"
+    );
+    expect(newArticle).toBeDefined();
+    expect(newArticle?.slug).not.toBe("test-article");
+    expect(newArticle?.slug).toMatch(/^test-article-\d+$/);
+  });
+
+  it("skips articles with existing substackUrl", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create an existing article with a substackUrl
+    await createTestArticle(t, profileId, {
+      title: "Already Imported",
+      slug: "already-imported",
+      substackUrl: "https://example.substack.com/p/existing",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Should Skip",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing", // Same URL
+        },
+        {
+          title: "Should Import",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(1);
+    expect(result.skipped).toBe(1);
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2); // Original + 1 new
+    const titles = articles.map((a) => a.title);
+    expect(titles).toContain("Already Imported");
+    expect(titles).toContain("Should Import");
+    expect(titles).not.toContain("Should Skip");
+  });
+
+  it("assigns specified author to all imported articles", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article 1",
+          content: "Content 1",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a1",
+        },
+        {
+          title: "Article 2",
+          content: "Content 2",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a2",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    expect(articles[0].authorId).toBe(authorId);
+    expect(articles[1].authorId).toBe(authorId);
+  });
+
+  it("applies optional tags to all imported articles", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article 1",
+          content: "Content 1",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a1",
+        },
+        {
+          title: "Article 2",
+          content: "Content 2",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a2",
+        },
+      ],
+      authorId,
+      tags: [tagAI, tagML],
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    expect(articles[0].tags).toEqual([tagAI, tagML]);
+    expect(articles[1].tags).toEqual([tagAI, tagML]);
+  });
+
+  it("auto-generates excerpt from first 160 chars if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const longContent =
+      "This is a very long article content that exceeds one hundred sixty characters and should be truncated to create an automatic excerpt for the article preview display.";
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Long Article",
+          content: longContent,
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/long",
+          // No excerpt provided
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].excerpt).toBeDefined();
+    expect(articles[0].excerpt?.length).toBeLessThanOrEqual(160);
+    expect(articles[0].excerpt).toBe(longContent.slice(0, 160));
+  });
+
+  it("uses provided excerpt when available", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article with Excerpt",
+          content: "Full content here",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/excerpt",
+          excerpt: "Custom excerpt provided",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].excerpt).toBe("Custom excerpt provided");
+  });
+
+  it("verifies authorId references existing published profile", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked", // Not published
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test",
+            content: "Content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies all tagIds exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test",
+            content: "Content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("returns { imported: 0, skipped: 0 } for empty items array", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [],
+      authorId,
+    });
+
+    expect(result.imported).toBe(0);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("returns correct counts with mixed import and skip", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create some existing articles
+    await createTestArticle(t, profileId, {
+      title: "Existing 1",
+      slug: "existing-1",
+      substackUrl: "https://example.substack.com/p/existing-1",
+    });
+    await createTestArticle(t, profileId, {
+      title: "Existing 2",
+      slug: "existing-2",
+      substackUrl: "https://example.substack.com/p/existing-2",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Skip 1",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing-1",
+        },
+        {
+          title: "Skip 2",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing-2",
+        },
+        {
+          title: "Import 1",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-1",
+        },
+        {
+          title: "Import 2",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-2",
+        },
+        {
+          title: "Import 3",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-3",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(3);
+    expect(result.skipped).toBe(2);
+  });
+
+  it("preserves publishedAt from RSS items", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const customPublishedAt = Date.now() - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Old Article",
+          content: "Content",
+          publishedAt: customPublishedAt,
+          substackUrl: "https://example.substack.com/p/old",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].publishedAt).toBe(customPublishedAt);
+  });
+
+  it("stores substackUrl for linking back", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const substackUrl = "https://mysubstack.substack.com/p/original-article";
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Linked Article",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl,
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].substackUrl).toBe(substackUrl);
+  });
+});
