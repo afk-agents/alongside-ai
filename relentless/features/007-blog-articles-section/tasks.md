@@ -1194,26 +1194,26 @@ As an admin, I need a UI to input an RSS URL, preview articles, and select which
 
 ### Acceptance Criteria
 
-- [ ] URL input field with "Fetch" button
-- [ ] Loading state while parsing
-- [ ] Preview list of articles with checkboxes
-- [ ] Already-imported articles shown but disabled
-- [ ] Author dropdown for assignment
-- [ ] Tags multi-select (optional)
-- [ ] "Import Selected" button
-- [ ] Success/error feedback after import
+- [x] URL input field with "Fetch" button
+- [x] Loading state while parsing
+- [x] Preview list of articles with checkboxes
+- [x] Already-imported articles shown but disabled
+- [x] Author dropdown for assignment
+- [x] Tags multi-select (optional)
+- [x] "Import Selected" button
+- [x] Success/error feedback after import
 
 ### Tasks
 
 1. **Create components/articles/RssImporter.tsx**
-   - URL input with validation
-   - Fetch button triggers parseRssFeed action
-   - Display parsed articles as checklist
-   - Disable checkboxes for alreadyImported
-   - Author dropdown (required)
-   - Tags multi-select (optional)
-   - Import button triggers importFromRss
-   - Display results summary
+   - [x] URL input with validation
+   - [x] Fetch button triggers parseRssFeed action
+   - [x] Display parsed articles as checklist
+   - [x] Disable checkboxes for alreadyImported
+   - [x] Author dropdown (required)
+   - [x] Tags multi-select (optional)
+   - [x] Import button triggers importFromRss
+   - [x] Display results summary
 
 ### Test Scenarios
 

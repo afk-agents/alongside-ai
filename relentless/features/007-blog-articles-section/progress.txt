@@ -1,8 +1,8 @@
 ---
 feature: 007-blog-articles-section
 started: '2026-01-17T19:54:07.452Z'
-last_updated: '2026-01-17T21:03:00.000Z'
-stories_completed: 21
+last_updated: '2026-01-17T22:15:00.000Z'
+stories_completed: 22
 patterns: []
 ---
 # Blog Articles Section - Progress Log
@@ -475,5 +475,43 @@ patterns: []
 - Existing URL check using Set provides O(1) lookup performance
 - Slug uniqueness handling follows pattern: base-slug, base-slug-1, base-slug-2, etc.
 - Author verification checks both existence and published status per specification
+
+---
+
+## 2026-01-17 - US-022: RSS Importer UI Component
+
+**Implemented:**
+- `RssImporter` component for importing articles from Substack RSS feeds
+- URL input with validation (requires http:// or https:// prefix)
+- Fetch button triggers `parseRssFeed` action
+- Loading state while parsing RSS feed
+- Preview list of parsed articles with checkboxes for selection
+- Already-imported articles displayed with disabled checkbox and "Already imported" badge
+- Author dropdown (required) populated from published profiles
+- Tags multi-select (optional) for applying to all imported articles
+- "Import Selected" button triggers `importFromRss` mutation
+- Success summary showing imported/skipped counts
+- Error handling for fetch and import failures
+- 20 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- components/articles/RssImporter.tsx (new)
+- components/articles/index.ts (updated to export RssImporter)
+- __tests__/components/articles/RssImporter.test.tsx (new)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/prd.json (marked passes: true)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (565 tests)
+
+**Learnings:**
+- Used existing patterns from ArticleEditor for form state management
+- Author dropdown only appears after successful fetch (progressive disclosure)
+- Followed TDD workflow: wrote 20 failing tests first, then implemented to make them pass
+- Mock patterns for useAction and useMutation from convex/react work consistently
+- Component handles state transitions cleanly: initial → fetching → preview → importing → success
 
 ---

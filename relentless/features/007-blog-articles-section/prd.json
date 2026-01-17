@@ -478,7 +478,8 @@
         "Typecheck passes",
         "Tests pass"
       ],
-      "priority": 22
+      "priority": 22,
+      "passes": true
     },
     {
       "id": "US-023",

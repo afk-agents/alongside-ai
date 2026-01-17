@@ -257,14 +257,14 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 ### US-019-023: Substack Import (P3)
 
 - [ ] `/admin/articles/import` accessible to admins
-- [ ] URL input with "Fetch" button
-- [ ] Parsed articles displayed as checkbox list
-- [ ] Already-imported articles disabled with indicator
-- [ ] Author dropdown required for import
-- [ ] Tags multi-select optional
-- [ ] "Import Selected" button triggers mutation
-- [ ] Success summary shows imported/skipped counts
-- [ ] Error handling for invalid URLs
+- [x] URL input with "Fetch" button
+- [x] Parsed articles displayed as checkbox list
+- [x] Already-imported articles disabled with indicator
+- [x] Author dropdown required for import
+- [x] Tags multi-select optional
+- [x] "Import Selected" button triggers mutation
+- [x] Success summary shows imported/skipped counts
+- [x] Error handling for invalid URLs
 
 ---
 
