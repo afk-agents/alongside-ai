@@ -70,15 +70,22 @@ describe("SignOutButton", () => {
     });
   });
 
-  it("redirects to home even if signOut fails", async () => {
+  it("shows error message if signOut fails", async () => {
     const user = userEvent.setup();
     mockSignOut.mockRejectedValueOnce(new Error("Network error"));
+
+    // Suppress expected console.error from component
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     render(<SignOutButton />);
     await user.click(screen.getByRole("button", { name: /sign out/i }));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith("/");
+      expect(screen.getByText(/unable to sign out/i)).toBeInTheDocument();
     });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
   });
 });
