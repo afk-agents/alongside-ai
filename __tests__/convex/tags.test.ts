@@ -244,6 +244,450 @@ describe("tags.getByIds query", () => {
   });
 });
 
+describe("tags.getContentByTagId query", () => {
+  it("returns empty arrays when tag has no content", async () => {
+    const t = convexTest(schema);
+
+    // Create a tag
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Empty Tag",
+        slug: "empty-tag",
+      });
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.events).toEqual([]);
+    expect(result.projects).toEqual([]);
+    expect(result.experiments).toEqual([]);
+    expect(result.articles).toEqual([]);
+    expect(result.videos).toEqual([]);
+  });
+
+  it("returns events that have the tag and are not archived", async () => {
+    const t = convexTest(schema);
+
+    // Create a tag and events
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "LangChain",
+        slug: "langchain",
+      });
+
+      // Create event with the tag (not archived)
+      await ctx.db.insert("events", {
+        title: "LangChain Workshop",
+        slug: "langchain-workshop",
+        description: "Learn LangChain",
+        date: Date.now() + 86400000, // Tomorrow
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      // Create archived event with the tag (should be filtered out)
+      await ctx.db.insert("events", {
+        title: "Old LangChain Event",
+        slug: "old-langchain-event",
+        description: "Old event",
+        date: Date.now() - 86400000, // Yesterday
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+        isArchived: true,
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.events).toHaveLength(1);
+    expect(result.events[0].title).toBe("LangChain Workshop");
+    expect(result.events[0].slug).toBe("langchain-workshop");
+    expect(result.events[0]).toHaveProperty("date");
+    expect(result.events[0]).toHaveProperty("isVirtual");
+  });
+
+  it("returns published projects with the tag", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "RAG",
+        slug: "rag",
+      });
+
+      // Create a profile for authorId
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create published project with the tag
+      await ctx.db.insert("projects", {
+        title: "RAG Implementation",
+        slug: "rag-implementation",
+        description: "A RAG project",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      // Create unpublished project with the tag (should be filtered out)
+      await ctx.db.insert("projects", {
+        title: "Draft RAG Project",
+        slug: "draft-rag-project",
+        description: "Draft project",
+        authorId: profileId,
+        isPublished: false,
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.projects).toHaveLength(1);
+    expect(result.projects[0].title).toBe("RAG Implementation");
+    expect(result.projects[0].slug).toBe("rag-implementation");
+    expect(result.projects[0]).toHaveProperty("description");
+  });
+
+  it("returns published experiments with the tag", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Agents",
+        slug: "agents",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create published experiment with the tag
+      await ctx.db.insert("experiments", {
+        title: "Agent Framework Experiment",
+        slug: "agent-framework-experiment",
+        description: "Testing agents",
+        authorId: profileId,
+        isPublished: true,
+        status: "exploring",
+        tags: [tagId],
+      });
+
+      // Create unpublished experiment (should be filtered out)
+      await ctx.db.insert("experiments", {
+        title: "Draft Experiment",
+        slug: "draft-experiment",
+        description: "Draft",
+        authorId: profileId,
+        isPublished: false,
+        status: "exploring",
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.experiments).toHaveLength(1);
+    expect(result.experiments[0].title).toBe("Agent Framework Experiment");
+    expect(result.experiments[0].slug).toBe("agent-framework-experiment");
+    expect(result.experiments[0]).toHaveProperty("status");
+  });
+
+  it("returns articles with the tag ordered by publishedAt desc", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Data Engineering",
+        slug: "data-engineering",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create articles with different publishedAt times
+      await ctx.db.insert("articles", {
+        title: "Older Article",
+        slug: "older-article",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now() - 86400000, // Yesterday
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("articles", {
+        title: "Newer Article",
+        slug: "newer-article",
+        content: "Content",
+        authorId: profileId,
+        publishedAt: Date.now(), // Now
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.articles).toHaveLength(2);
+    // Should be ordered by publishedAt desc (newer first)
+    expect(result.articles[0].title).toBe("Newer Article");
+    expect(result.articles[1].title).toBe("Older Article");
+    expect(result.articles[0]).toHaveProperty("publishedAt");
+  });
+
+  it("returns published videos with the tag", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "PostgreSQL",
+        slug: "postgresql",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create published video with the tag
+      await ctx.db.insert("videos", {
+        title: "PostgreSQL Tutorial",
+        slug: "postgresql-tutorial",
+        youtubeId: "abc123",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      // Create unpublished video (should be filtered out)
+      await ctx.db.insert("videos", {
+        title: "Draft Video",
+        slug: "draft-video",
+        youtubeId: "xyz789",
+        authorId: profileId,
+        isPublished: false,
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.videos).toHaveLength(1);
+    expect(result.videos[0].title).toBe("PostgreSQL Tutorial");
+    expect(result.videos[0].slug).toBe("postgresql-tutorial");
+    expect(result.videos[0]).toHaveProperty("youtubeId");
+  });
+
+  it("returns content from multiple types for the same tag", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "AI",
+        slug: "ai",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create one of each content type with the tag
+      await ctx.db.insert("events", {
+        title: "AI Conference",
+        slug: "ai-conference",
+        description: "Annual AI conference",
+        date: Date.now() + 86400000,
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("projects", {
+        title: "AI Project",
+        slug: "ai-project",
+        description: "An AI project",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("experiments", {
+        title: "AI Experiment",
+        slug: "ai-experiment",
+        description: "Testing AI",
+        authorId: profileId,
+        isPublished: true,
+        status: "prototyping",
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("articles", {
+        title: "AI Article",
+        slug: "ai-article",
+        content: "AI content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("videos", {
+        title: "AI Video",
+        slug: "ai-video",
+        youtubeId: "ai123",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.events).toHaveLength(1);
+    expect(result.projects).toHaveLength(1);
+    expect(result.experiments).toHaveLength(1);
+    expect(result.articles).toHaveLength(1);
+    expect(result.videos).toHaveLength(1);
+  });
+
+  it("does not return content without the tag", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "TargetTag",
+        slug: "target-tag",
+      });
+
+      const otherTagId = await ctx.db.insert("tags", {
+        name: "OtherTag",
+        slug: "other-tag",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create project with target tag
+      await ctx.db.insert("projects", {
+        title: "Tagged Project",
+        slug: "tagged-project",
+        description: "Has target tag",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      // Create project with different tag (should not appear)
+      await ctx.db.insert("projects", {
+        title: "Other Project",
+        slug: "other-project",
+        description: "Has other tag",
+        authorId: profileId,
+        isPublished: true,
+        tags: [otherTagId],
+      });
+
+      // Create project with no tags (should not appear)
+      await ctx.db.insert("projects", {
+        title: "Untagged Project",
+        slug: "untagged-project",
+        description: "No tags",
+        authorId: profileId,
+        isPublished: true,
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.projects).toHaveLength(1);
+    expect(result.projects[0].title).toBe("Tagged Project");
+  });
+
+  it("orders events by date descending", async () => {
+    const t = convexTest(schema);
+
+    const { tagId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Workshop",
+        slug: "workshop",
+      });
+
+      // Create events with different dates
+      await ctx.db.insert("events", {
+        title: "Earlier Event",
+        slug: "earlier-event",
+        description: "Earlier",
+        date: Date.now() + 86400000, // Tomorrow
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("events", {
+        title: "Later Event",
+        slug: "later-event",
+        description: "Later",
+        date: Date.now() + 172800000, // Day after tomorrow
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      return { tagId };
+    });
+
+    const result = await t.query(api.tags.getContentByTagId, { tagId });
+
+    expect(result.events).toHaveLength(2);
+    // Should be ordered by date desc (later first)
+    expect(result.events[0].title).toBe("Later Event");
+    expect(result.events[1].title).toBe("Earlier Event");
+  });
+});
+
 describe("tags.create mutation", () => {
   // Helper to create test context with admin user
   async function setupAdminUser(t: TestContext) {

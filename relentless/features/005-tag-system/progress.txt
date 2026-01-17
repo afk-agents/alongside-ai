@@ -1,7 +1,7 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T02:15:00.000Z'
+last_updated: '2026-01-17T02:13:26.715Z'
 stories_completed: 2
 patterns: []
 ---
@@ -103,5 +103,39 @@ patterns: []
 - Convex query return types need to use v.union() for nullable returns
 - db.get() returns null for deleted/non-existent IDs (doesn't throw)
 - Promise.all with db.get is efficient for fetching multiple documents by ID
+
+---
+
+## 2026-01-17 - US-003: Tag Query - getContentByTagId
+
+**Implemented:**
+- Added `tags.getContentByTagId` query: fetches all published content for a specific tag
+- Returns object with five arrays: events, projects, experiments, articles, videos
+- Events: filtered where isArchived !== true, ordered by date descending
+- Projects: filtered where isPublished === true, ordered by _creationTime descending
+- Experiments: filtered where isPublished === true, ordered by _creationTime descending
+- Articles: all articles with tag, ordered by publishedAt descending
+- Videos: filtered where isPublished === true, ordered by _creationTime descending
+- Each content item includes: _id, title, slug, plus type-specific fields (date/isVirtual for events, description for projects, status for experiments, publishedAt for articles, youtubeId for videos)
+
+**Files Changed:**
+- convex/tags.ts (modified - added getContentByTagId query)
+- __tests__/convex/tags.test.ts (modified - added 9 tests for getContentByTagId)
+
+**Tests Added (9 total):**
+- returns empty arrays when tag has no content
+- returns events that have the tag and are not archived
+- returns published projects with the tag
+- returns published experiments with the tag
+- returns articles with the tag ordered by publishedAt desc
+- returns published videos with the tag
+- returns content from multiple types for the same tag
+- does not return content without the tag
+- orders events by date descending
+
+**Learnings:**
+- Convex queries need to collect all items first then filter in memory (no "contains" index)
+- Promise.all is efficient for parallel collection queries
+- Status type needs v.union with all literal values to match schema exactly
 
 ---

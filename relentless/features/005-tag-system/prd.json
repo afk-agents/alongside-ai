@@ -62,8 +62,8 @@
         "Tests pass"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-17. Implemented getContentByTagId query that returns grouped content (events, projects, experiments, articles, videos) with proper filtering (isPublished/isArchived) and ordering (date/publishedAt/_creationTime desc). 9 tests added."
     },
     {
       "id": "US-004",

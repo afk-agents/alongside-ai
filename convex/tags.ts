@@ -185,3 +185,153 @@ export const getByIds = query({
       }));
   },
 });
+
+/**
+ * Get all published content for a specific tag.
+ *
+ * Returns content grouped by type:
+ * - events: not archived, ordered by date desc
+ * - projects: isPublished === true, ordered by _creationTime desc
+ * - experiments: isPublished === true, ordered by _creationTime desc
+ * - articles: ordered by publishedAt desc
+ * - videos: isPublished === true, ordered by _creationTime desc
+ */
+export const getContentByTagId = query({
+  args: { tagId: v.id("tags") },
+  returns: v.object({
+    events: v.array(
+      v.object({
+        _id: v.id("events"),
+        title: v.string(),
+        slug: v.string(),
+        date: v.number(),
+        isVirtual: v.boolean(),
+      })
+    ),
+    projects: v.array(
+      v.object({
+        _id: v.id("projects"),
+        title: v.string(),
+        slug: v.string(),
+        description: v.string(),
+      })
+    ),
+    experiments: v.array(
+      v.object({
+        _id: v.id("experiments"),
+        title: v.string(),
+        slug: v.string(),
+        status: v.union(
+          v.literal("exploring"),
+          v.literal("prototyping"),
+          v.literal("paused"),
+          v.literal("concluded")
+        ),
+      })
+    ),
+    articles: v.array(
+      v.object({
+        _id: v.id("articles"),
+        title: v.string(),
+        slug: v.string(),
+        publishedAt: v.number(),
+      })
+    ),
+    videos: v.array(
+      v.object({
+        _id: v.id("videos"),
+        title: v.string(),
+        slug: v.string(),
+        youtubeId: v.string(),
+      })
+    ),
+  }),
+  handler: async (ctx, args) => {
+    const { tagId } = args;
+
+    // Fetch all content types in parallel
+    const [allEvents, allProjects, allExperiments, allArticles, allVideos] =
+      await Promise.all([
+        ctx.db.query("events").collect(),
+        ctx.db.query("projects").collect(),
+        ctx.db.query("experiments").collect(),
+        ctx.db.query("articles").collect(),
+        ctx.db.query("videos").collect(),
+      ]);
+
+    // Filter events: has tag and not archived, order by date desc
+    const events = allEvents
+      .filter(
+        (event) =>
+          event.tags?.includes(tagId) && event.isArchived !== true
+      )
+      .sort((a, b) => b.date - a.date)
+      .map((event) => ({
+        _id: event._id,
+        title: event.title,
+        slug: event.slug,
+        date: event.date,
+        isVirtual: event.isVirtual,
+      }));
+
+    // Filter projects: has tag and isPublished, order by _creationTime desc
+    const projects = allProjects
+      .filter(
+        (project) =>
+          project.tags?.includes(tagId) && project.isPublished === true
+      )
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((project) => ({
+        _id: project._id,
+        title: project.title,
+        slug: project.slug,
+        description: project.description,
+      }));
+
+    // Filter experiments: has tag and isPublished, order by _creationTime desc
+    const experiments = allExperiments
+      .filter(
+        (experiment) =>
+          experiment.tags?.includes(tagId) && experiment.isPublished === true
+      )
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((experiment) => ({
+        _id: experiment._id,
+        title: experiment.title,
+        slug: experiment.slug,
+        status: experiment.status,
+      }));
+
+    // Filter articles: has tag, order by publishedAt desc
+    const articles = allArticles
+      .filter((article) => article.tags?.includes(tagId))
+      .sort((a, b) => b.publishedAt - a.publishedAt)
+      .map((article) => ({
+        _id: article._id,
+        title: article.title,
+        slug: article.slug,
+        publishedAt: article.publishedAt,
+      }));
+
+    // Filter videos: has tag and isPublished, order by _creationTime desc
+    const videos = allVideos
+      .filter(
+        (video) => video.tags?.includes(tagId) && video.isPublished === true
+      )
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((video) => ({
+        _id: video._id,
+        title: video.title,
+        slug: video.slug,
+        youtubeId: video.youtubeId,
+      }));
+
+    return {
+      events,
+      projects,
+      experiments,
+      articles,
+      videos,
+    };
+  },
+});
