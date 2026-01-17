@@ -450,3 +450,46 @@ export const getContentByTagId = query({
     };
   },
 });
+
+/**
+ * Update an existing tag (admin only).
+ *
+ * - Requires admin role
+ * - Only name and description can be updated
+ * - Slug is immutable after creation
+ * - Returns null on success
+ */
+export const update = mutation({
+  args: {
+    id: v.id("tags"),
+    name: v.string(),
+    description: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    // Check if tag exists
+    const existingTag = await ctx.db.get(args.id);
+    if (!existingTag) {
+      throw new Error(`Tag not found with ID: ${args.id}`);
+    }
+
+    // Update name and description (slug is immutable)
+    // Only update description if it was explicitly provided (not undefined)
+    // This prevents accidentally clearing description when only updating name
+    if (args.description !== undefined) {
+      await ctx.db.patch(args.id, {
+        name: args.name,
+        description: args.description,
+      });
+    } else {
+      await ctx.db.patch(args.id, {
+        name: args.name,
+      });
+    }
+
+    return null;
+  },
+});

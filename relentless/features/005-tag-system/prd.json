@@ -164,8 +164,8 @@
         "Tests pass"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-17. Implemented tags.update mutation that updates name and description only (slug is immutable). Uses requireRole for admin-only access, throws error if tag not found. 8 tests added covering admin updates, non-admin rejection, unauthenticated rejection, tag not found, and slug immutability."
     },
     {
       "id": "US-009",

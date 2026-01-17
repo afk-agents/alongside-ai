@@ -177,25 +177,25 @@
 **Description:** As an admin, I want to edit a tag's name and description so that I can maintain the taxonomy.
 
 **Acceptance Criteria:**
-- [ ] `tags.update` mutation exists in `convex/tags.ts`
-- [ ] Mutation requires admin role
-- [ ] Mutation accepts id, name (required), description (optional)
-- [ ] Slug cannot be changed (immutable after creation)
-- [ ] Updated name reflects on tag page and all content items
-- [ ] Returns null on success
-- [ ] Tests cover: admin updates tag, non-admin rejection, slug immutability
-- [ ] Typecheck passes
-- [ ] Lint passes
-- [ ] Tests pass
+- [x] `tags.update` mutation exists in `convex/tags.ts`
+- [x] Mutation requires admin role
+- [x] Mutation accepts id, name (required), description (optional)
+- [x] Slug cannot be changed (immutable after creation)
+- [x] Updated name reflects on tag page and all content items
+- [x] Returns null on success
+- [x] Tests cover: admin updates tag, non-admin rejection, slug immutability
+- [x] Typecheck passes
+- [x] Lint passes
+- [x] Tests pass
 
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P3
-**Status:** pending
+**Status:** completed
 
 **Implementation Tasks:**
-- [ ] T024 [US-006] Write tests for `tags.update` mutation
-- [ ] T025 [US-006] Implement `tags.update` mutation with slug immutability
+- [x] T024 [US-006] Write tests for `tags.update` mutation
+- [x] T025 [US-006] Implement `tags.update` mutation with slug immutability
 
 ---
 

@@ -1181,3 +1181,248 @@ describe("tags.create mutation", () => {
     ).rejects.toThrow(/Invalid slug format/);
   });
 });
+
+describe("tags.update mutation", () => {
+  // Helper to create test context with admin user
+  async function setupAdminUser(t: TestContext) {
+    const { userId, profileId } = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+      });
+      return { userId, profileId };
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+      profileId,
+    };
+  }
+
+  async function setupGuestUser(t: TestContext) {
+    const { userId, profileId } = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "guest",
+        profileStatus: "locked",
+      });
+      return { userId, profileId };
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+      profileId,
+    };
+  }
+
+  it("admin can update tag name and preserve existing description", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create a tag
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Original Name",
+        slug: "original-slug",
+        description: "Original description",
+      });
+    });
+
+    // Update the tag name and explicitly keep the description
+    const result = await adminCtx.mutation(api.tags.update, {
+      id: tagId,
+      name: "Updated Name",
+      description: "Original description",
+    });
+
+    expect(result).toBeNull();
+
+    // Verify the update
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    expect(tag?.name).toBe("Updated Name");
+    expect(tag?.slug).toBe("original-slug"); // Slug should NOT change
+    expect(tag?.description).toBe("Original description");
+  });
+
+  it("admin can update tag description", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+        description: "Original description",
+      });
+    });
+
+    const result = await adminCtx.mutation(api.tags.update, {
+      id: tagId,
+      name: "Test Tag",
+      description: "Updated description",
+    });
+
+    expect(result).toBeNull();
+
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    expect(tag?.description).toBe("Updated description");
+  });
+
+  it("admin can update both name and description", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Original",
+        slug: "original",
+        description: "Original desc",
+      });
+    });
+
+    await adminCtx.mutation(api.tags.update, {
+      id: tagId,
+      name: "New Name",
+      description: "New description",
+    });
+
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    expect(tag?.name).toBe("New Name");
+    expect(tag?.description).toBe("New description");
+    expect(tag?.slug).toBe("original"); // Slug immutable
+  });
+
+  it("preserves description when not provided in update", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+        description: "Has description",
+      });
+    });
+
+    // When description is omitted (not passed), it should be preserved
+    await adminCtx.mutation(api.tags.update, {
+      id: tagId,
+      name: "Updated Name",
+    });
+
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    // Description should be preserved when not provided
+    expect(tag?.name).toBe("Updated Name");
+    expect(tag?.description).toBe("Has description");
+  });
+
+  it("non-admin throws AuthorizationError", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+      });
+    });
+
+    await expect(
+      guestCtx.mutation(api.tags.update, {
+        id: tagId,
+        name: "Updated",
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("unauthenticated user throws AuthenticationError", async () => {
+    const t = convexTest(schema);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+      });
+    });
+
+    await expect(
+      t.mutation(api.tags.update, {
+        id: tagId,
+        name: "Updated",
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("throws error when tag ID not found", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create and delete a tag to get a valid but non-existent ID
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", {
+        name: "Temporary",
+        slug: "temporary",
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.tags.update, {
+        id: deletedId,
+        name: "Updated",
+      })
+    ).rejects.toThrow(/Tag not found/);
+  });
+
+  it("slug remains immutable even if different name is provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "LangChain",
+        slug: "langchain",
+      });
+    });
+
+    // Update with a very different name
+    await adminCtx.mutation(api.tags.update, {
+      id: tagId,
+      name: "LangChain Framework for Building LLM Applications",
+    });
+
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    // Name should update, but slug must remain unchanged
+    expect(tag?.name).toBe("LangChain Framework for Building LLM Applications");
+    expect(tag?.slug).toBe("langchain");
+  });
+});

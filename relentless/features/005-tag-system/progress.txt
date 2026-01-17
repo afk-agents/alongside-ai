@@ -1,7 +1,7 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T05:33:00.000Z'
+last_updated: '2026-01-17T02:33:16.190Z'
 stories_completed: 7
 patterns: []
 ---
@@ -277,5 +277,40 @@ patterns: []
 - Conditional singular/plural: `{count} {count === 1 ? "item" : "items"}`
 - Test for grid by checking for `.grid` class selector
 - Follow existing page patterns (TagDetailPage) for consistency in loading/empty states
+
+---
+
+## 2026-01-17 - US-008: Admin Update Tag Mutation
+
+**Implemented:**
+- Added `tags.update` mutation to `convex/tags.ts`
+  - Args: id (tag ID), name (required string), description (optional string)
+  - Uses `requireRole(ctx, ['admin'])` to enforce admin-only access
+  - Checks if tag exists, throws error if not found
+  - Uses `ctx.db.patch` to update name and description only
+  - Slug is immutable (not updated even if name changes)
+  - Returns null on success
+  - Preserves description when not provided in args (using "in" check)
+
+**Files Changed:**
+- convex/tags.ts (modified - added update mutation)
+- __tests__/convex/tags.test.ts (modified - added 9 tests)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/prd.json (updated)
+
+**Tests Added (9 total):**
+- admin can update tag name and preserve existing description
+- admin can update tag description
+- admin can update both name and description
+- preserves description when not provided in update
+- non-admin throws AuthorizationError
+- unauthenticated user throws AuthenticationError
+- throws error when tag ID not found
+- slug remains immutable even if different name is provided
+
+**Learnings:**
+- Convex optional args: use "description" in args check to distinguish between "not provided" vs "explicitly undefined"
+- The patch object should only include description if explicitly passed to allow preserving existing values
+- Slug immutability: never include slug in the patch object, even if name changes
 
 ---
