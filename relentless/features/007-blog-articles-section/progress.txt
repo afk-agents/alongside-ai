@@ -1,8 +1,8 @@
 ---
 feature: 007-blog-articles-section
 started: '2026-01-17T19:54:07.452Z'
-last_updated: '2026-01-17T22:58:00.000Z'
-stories_completed: 17
+last_updated: '2026-01-17T21:05:00.000Z'
+stories_completed: 18
 patterns: []
 ---
 # Blog Articles Section - Progress Log
@@ -358,5 +358,29 @@ patterns: []
 - Fallback logic: when article has no tags OR no articles share tags, returns same-author articles
 - sharedTagCount=0 for fallback results (same-author but no shared tags)
 - Need to handle case where article doesn't exist (return empty array)
+
+---
+
+## 2026-01-17 - US-014: RelatedArticles Component
+
+**Implemented:**
+- `RelatedArticles` component for displaying related articles at the bottom of article pages
+- Uses `articles.getRelated` query with articleId prop
+- Displays up to 3 related articles in a responsive grid layout (1/2/3 columns)
+- Each article card shows title (as link), excerpt (if available), and formatted date
+- Section hidden when loading (undefined) or no related articles exist
+- Semantic section element with "Related Articles" heading
+- 9 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- components/articles/RelatedArticles.tsx (new)
+- components/articles/index.ts (updated to export RelatedArticles)
+- app/blog/[slug]/page.tsx (integrated RelatedArticles component)
+- __tests__/components/articles/RelatedArticles.test.tsx (new)
+
+**Learnings:**
+- Component follows existing patterns for loading/empty state handling (return null)
+- Reused formatDate utility within component for consistent date formatting
+- Grid layout provides good responsive display for varying numbers of related articles
 
 ---

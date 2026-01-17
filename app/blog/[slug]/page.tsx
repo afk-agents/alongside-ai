@@ -4,7 +4,7 @@ import { use } from "react";
 import { useQuery } from "convex/react";
 import { notFound } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { ArticleHeader, ArticleContent } from "@/components/articles";
+import { ArticleHeader, ArticleContent, RelatedArticles } from "@/components/articles";
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -65,6 +65,8 @@ export default function ArticlePage({ params }: ArticlePageProps) {
           </p>
         </div>
       )}
+
+      <RelatedArticles articleId={article._id} />
     </article>
   );
 }

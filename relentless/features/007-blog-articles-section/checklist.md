@@ -224,11 +224,11 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 
 ### US-014: RelatedArticles Component (P2)
 
-- [ ] Fetches related articles by articleId
-- [ ] Displays up to 3 related articles
-- [ ] Links to related article pages
-- [ ] Hidden when no related articles exist
-- [ ] Section has clear heading ("Related Articles" or similar)
+- [x] Fetches related articles by articleId
+- [x] Displays up to 3 related articles
+- [x] Links to related article pages
+- [x] Hidden when no related articles exist
+- [x] Section has clear heading ("Related Articles" or similar)
 
 ### US-015-018: Admin Article Pages
 

@@ -794,26 +794,26 @@ As a visitor who finished reading an article, I want to see related articles, so
 
 ### Acceptance Criteria
 
-- [ ] Component fetches related articles using articles.getRelated
-- [ ] Displays up to 3 related articles
-- [ ] Shows article title, date, and excerpt
-- [ ] Links to related article pages
-- [ ] Section hidden when no related articles exist
-- [ ] Section heading: "Related Articles" or "Keep Reading"
+- [x] Component fetches related articles using articles.getRelated
+- [x] Displays up to 3 related articles
+- [x] Shows article title, date, and excerpt
+- [x] Links to related article pages
+- [x] Section hidden when no related articles exist
+- [x] Section heading: "Related Articles" or "Keep Reading"
 
 ### Tasks
 
 1. **Create components/articles/RelatedArticles.tsx**
-   - Accept articleId prop
-   - Fetch related articles with useQuery
-   - Return null if loading or empty results
-   - Render section with heading
-   - Display compact article cards (simplified ArticleCard or custom)
-   - Link each to /blog/[slug]
+   - [x] Accept articleId prop
+   - [x] Fetch related articles with useQuery
+   - [x] Return null if loading or empty results
+   - [x] Render section with heading
+   - [x] Display compact article cards (simplified ArticleCard or custom)
+   - [x] Link each to /blog/[slug]
 
 2. **Integrate into article page**
-   - Add RelatedArticles component after article content
-   - Pass current article._id
+   - [x] Add RelatedArticles component after article content
+   - [x] Pass current article._id
 
 ### Test Scenarios
 

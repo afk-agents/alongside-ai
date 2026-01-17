@@ -7,3 +7,4 @@ export { FeaturedArticles } from "./FeaturedArticles";
 export { ArticleHeader } from "./ArticleHeader";
 export { ArticleEditor } from "./ArticleEditor";
 export { MarkdownPreview } from "./MarkdownPreview";
+export { RelatedArticles } from "./RelatedArticles";
