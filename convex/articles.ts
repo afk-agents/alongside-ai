@@ -261,6 +261,7 @@ const featuredArticleValidator = v.object({
   excerpt: v.optional(v.string()),
   publishedAt: v.number(),
   author: authorInfoValidator,
+  tags: v.array(tagInfoValidator),
 });
 
 /**
@@ -294,10 +295,13 @@ export const listFeatured = query({
     // Take only the requested limit
     const featuredArticles = allArticles.slice(0, limit);
 
-    // Fetch author info for each article
-    const articlesWithAuthor = await Promise.all(
+    // Fetch author info and tags for each article
+    const articlesWithAuthorAndTags = await Promise.all(
       featuredArticles.map(async (article) => {
-        const author = await fetchAuthorInfo(ctx, article.authorId);
+        const [author, tags] = await Promise.all([
+          fetchAuthorInfo(ctx, article.authorId),
+          fetchTags(ctx, article.tags),
+        ]);
 
         return {
           _id: article._id,
@@ -306,11 +310,12 @@ export const listFeatured = query({
           excerpt: article.excerpt,
           publishedAt: article.publishedAt,
           author,
+          tags,
         };
       })
     );
 
-    return articlesWithAuthor;
+    return articlesWithAuthorAndTags;
   },
 });
 
