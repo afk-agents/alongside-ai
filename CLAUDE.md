@@ -12,6 +12,7 @@ bunx convex dev      # Start Convex dev server (watches for changes)
 # Other commands
 bun run build        # Production build
 bun run lint         # Run ESLint
+bun run test         # Run tests
 ```
 
 ## Architecture

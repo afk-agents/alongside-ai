@@ -15,8 +15,8 @@ bunx tsc --noEmit
 # Linting
 bun run lint
 
-# Tests (if applicable)
-bun test
+# Tests 
+bun run test
 ```
 
 **If ANY check fails, DO NOT mark the story as complete.**
