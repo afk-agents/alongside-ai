@@ -30,9 +30,21 @@ export function LoginForm() {
     try {
       await signIn("password", formData);
       router.push("/");
-    } catch {
-      // Generic error message for security - don't reveal if email exists
-      setError("Invalid email or password");
+    } catch (err) {
+      console.error("Login error:", err);
+
+      const errorMessage = err instanceof Error ? err.message.toLowerCase() : "";
+
+      // Check for network/connection errors
+      if (err instanceof TypeError || errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        setError("Unable to connect. Please check your internet connection.");
+      } else if (errorMessage.includes("invalid") || errorMessage.includes("credentials") || errorMessage.includes("password")) {
+        // Generic error message for security - don't reveal if email exists
+        setError("Invalid email or password");
+      } else {
+        // Generic fallback for unexpected errors
+        setError("Unable to sign in. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }
