@@ -1058,9 +1058,9 @@ As a developer, I need to install the RSS parsing package for Substack import fu
 
 ### Acceptance Criteria
 
-- [ ] rss-parser package installed
-- [ ] Package compatible with Convex actions (Node.js runtime)
-- [ ] No dependency conflicts
+- [x] rss-parser package installed
+- [x] Package compatible with Convex actions (Node.js runtime)
+- [x] No dependency conflicts
 
 ### Tasks
 

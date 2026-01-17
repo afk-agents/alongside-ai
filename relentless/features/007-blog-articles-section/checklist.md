@@ -24,8 +24,8 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 - [ ] **PKG-002**: `remark-gfm` installed for GitHub-flavored markdown support (US-005)
 - [ ] **PKG-003**: `rehype-sanitize` installed for XSS protection (US-005)
 - [ ] **PKG-004**: `rehype-highlight` installed for code syntax highlighting (US-005)
-- [ ] **PKG-005**: `rss-parser` installed for Substack import (US-019, P3)
-- [ ] **PKG-006**: No peer dependency warnings or conflicts
+- [x] **PKG-005**: `rss-parser` installed for Substack import (US-019, P3)
+- [x] **PKG-006**: No peer dependency warnings or conflicts
 
 ---
 

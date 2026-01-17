@@ -1,6 +1,10 @@
 import { v } from "convex/values";
-import { mutation, query, MutationCtx } from "./_generated/server";
+import { action, mutation, query, MutationCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+
+// RSS Parser import - used for Substack RSS import functionality
+// This import is at the top level to verify compatibility with Convex actions
+import Parser from "rss-parser";
 import { requireRole } from "./users";
 
 /**
@@ -861,5 +865,43 @@ export const getRelated = query({
       publishedAt: article.publishedAt,
       sharedTagCount: 0,
     }));
+  },
+});
+
+// ============================================================================
+// RSS Import Actions (for Substack sync)
+// ============================================================================
+
+/**
+ * Test action to verify rss-parser works in Convex runtime.
+ * This action instantiates the RSS parser to confirm the package is compatible.
+ *
+ * @internal Used only for testing RSS parser compatibility
+ */
+export const testRssParserImport = action({
+  args: {},
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+  }),
+  handler: async () => {
+    // Create parser instance to verify the import works
+    const parser = new Parser();
+
+    // Verify parser has expected methods
+    const hasParseURL = typeof parser.parseURL === "function";
+    const hasParseString = typeof parser.parseString === "function";
+
+    if (hasParseURL && hasParseString) {
+      return {
+        success: true,
+        message: "rss-parser successfully imported and instantiated in Convex action",
+      };
+    }
+
+    return {
+      success: false,
+      message: "rss-parser imported but missing expected methods",
+    };
   },
 });

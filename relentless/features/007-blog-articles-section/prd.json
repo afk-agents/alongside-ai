@@ -409,7 +409,8 @@
         "No dependency conflicts",
         "Typecheck passes"
       ],
-      "priority": 19
+      "priority": 19,
+      "passes": true
     },
     {
       "id": "US-020",

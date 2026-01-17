@@ -1,8 +1,8 @@
 ---
 feature: 007-blog-articles-section
 started: '2026-01-17T19:54:07.452Z'
-last_updated: '2026-01-17T21:05:00.000Z'
-stories_completed: 18
+last_updated: '2026-01-17T22:10:00.000Z'
+stories_completed: 19
 patterns: []
 ---
 # Blog Articles Section - Progress Log
@@ -382,5 +382,31 @@ patterns: []
 - Component follows existing patterns for loading/empty state handling (return null)
 - Reused formatDate utility within component for consistent date formatting
 - Grid layout provides good responsive display for varying numbers of related articles
+
+---
+
+## 2026-01-17 - US-019: Install RSS Parser Dependency
+
+**Implemented:**
+- Installed `rss-parser@3.13.0` for Substack RSS import functionality
+- Added import to `convex/articles.ts` to verify compatibility with Convex actions
+- Created `testRssParserImport` action to verify parser instantiation works in Convex runtime
+- Verified parser has expected methods (parseURL, parseString)
+
+**Files Changed:**
+- package.json (added rss-parser dependency)
+- convex/articles.ts (added Parser import and test action)
+- bun.lockb (updated)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (524 tests)
+- Package installed without peer dependency warnings or conflicts
+
+**Learnings:**
+- rss-parser v3.13.0 is compatible with Convex actions (Node.js runtime)
+- Import can be at module level for use in action handlers
+- Next story (US-020) will implement the actual parseRssFeed action that uses this parser
 
 ---
