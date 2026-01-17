@@ -3,6 +3,22 @@ import { query, mutation } from "./_generated/server";
 import { requireRole } from "./users";
 
 /**
+ * Profile list item validator for admin list view.
+ * Includes minimal fields needed for table display.
+ */
+const profileListItemValidator = v.object({
+  _id: v.id("profiles"),
+  displayName: v.optional(v.string()),
+  role: v.union(v.literal("admin"), v.literal("member"), v.literal("guest")),
+  profileStatus: v.union(
+    v.literal("locked"),
+    v.literal("unlocked"),
+    v.literal("published")
+  ),
+  slug: v.optional(v.string()),
+});
+
+/**
  * Profile return type validator for public queries.
  * Includes all fields that can be publicly exposed.
  */
@@ -77,6 +93,34 @@ export const getBySlug = query({
     }
 
     return profile;
+  },
+});
+
+/**
+ * List all profiles (admin only).
+ *
+ * Returns all profiles with minimal fields for table display.
+ * Sorted by creation time descending (most recent first).
+ */
+export const list = query({
+  args: {},
+  returns: v.array(profileListItemValidator),
+  handler: async (ctx) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    const profiles = await ctx.db.query("profiles").collect();
+
+    // Sort by creation time descending (most recent first)
+    return profiles
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((p) => ({
+        _id: p._id,
+        displayName: p.displayName,
+        role: p.role,
+        profileStatus: p.profileStatus,
+        slug: p.slug,
+      }));
   },
 });
 
@@ -211,5 +255,91 @@ export const getPhotoUrl = query({
   returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
+/**
+ * Content item validator for authored content response.
+ */
+const contentItemValidator = v.object({
+  title: v.string(),
+  slug: v.string(),
+  type: v.union(
+    v.literal("project"),
+    v.literal("experiment"),
+    v.literal("article"),
+    v.literal("video")
+  ),
+});
+
+/**
+ * Authored content response validator.
+ */
+const authoredContentValidator = v.object({
+  projects: v.array(contentItemValidator),
+  experiments: v.array(contentItemValidator),
+  articles: v.array(contentItemValidator),
+  videos: v.array(contentItemValidator),
+});
+
+/**
+ * Get all published content authored by a profile.
+ *
+ * Returns grouped content (projects, experiments, articles, videos)
+ * with minimal fields for display. Only returns published content.
+ */
+export const getAuthoredContent = query({
+  args: { profileId: v.id("profiles") },
+  returns: authoredContentValidator,
+  handler: async (ctx, args) => {
+    // Query published projects by author
+    const projects = await ctx.db
+      .query("projects")
+      .withIndex("by_authorId", (q) => q.eq("authorId", args.profileId))
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect();
+
+    // Query published experiments by author
+    const experiments = await ctx.db
+      .query("experiments")
+      .withIndex("by_authorId", (q) => q.eq("authorId", args.profileId))
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect();
+
+    // Query articles by author (articles don't have isPublished - publishedAt implies published)
+    const articles = await ctx.db
+      .query("articles")
+      .withIndex("by_authorId", (q) => q.eq("authorId", args.profileId))
+      .collect();
+
+    // Query published videos by author
+    const videos = await ctx.db
+      .query("videos")
+      .withIndex("by_authorId", (q) => q.eq("authorId", args.profileId))
+      .filter((q) => q.eq(q.field("isPublished"), true))
+      .collect();
+
+    return {
+      projects: projects.map((p) => ({
+        title: p.title,
+        slug: p.slug,
+        type: "project" as const,
+      })),
+      experiments: experiments.map((e) => ({
+        title: e.title,
+        slug: e.slug,
+        type: "experiment" as const,
+      })),
+      articles: articles.map((a) => ({
+        title: a.title,
+        slug: a.slug,
+        type: "article" as const,
+      })),
+      videos: videos.map((v) => ({
+        title: v.title,
+        slug: v.slug,
+        type: "video" as const,
+      })),
+    };
   },
 });
