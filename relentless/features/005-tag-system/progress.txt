@@ -1,0 +1,351 @@
+---
+feature: Tag System
+started: 2026-01-16T00:00:00.000Z
+last_updated: '2026-01-17T04:40:00.000Z'
+stories_completed: 9
+patterns: []
+---
+
+# Progress Log: Tag System
+
+## 2026-01-16 - Specification Created
+
+- Created feature specification with 7 user stories
+- Prioritized stories: P1 (view tag page, click tags), P2 (browse all tags, admin create), P3 (admin assign/edit/delete)
+- Database schema already exists in convex/schema.ts with tags table and content type references
+- No clarifications needed - made informed assumptions documented in spec
+
+## 2026-01-16 - Technical Plan Created
+
+- Created implementation plan with Convex API design
+- Defined 4 public queries: list, getBySlug, getContentByTagId, getByIds
+- Defined 3 admin mutations: create, update, remove
+- Designed 3 React components: TagBadge, TagList, TagContentSection
+- Planned 2 pages: /tags (listing) and /tags/[slug] (detail)
+- Implementation order: Admin Create Tag → View Tag Page → Click Tags → Browse All Tags → Admin Assign/Edit/Delete
+- Constitution compliance: PASS (all principles satisfied)
+
+## 2026-01-16 - Tasks Generated
+
+- Created 7 user stories with 31 total tasks
+- US-001 (Admin Creates Tag) is the foundation - all others depend on it
+- P1 stories: US-001, US-002 (View Tag Page), US-003 (Click Tags)
+- P2 stories: US-004 (Browse All Tags), US-005 (Assign Tags)
+- P3 stories: US-006 (Edit Tag), US-007 (Delete Tag)
+- Parallel opportunities identified for independent tasks
+- Ready for implementation or `/relentless.checklist`
+
+## 2026-01-16 - PRD JSON Created
+
+- Converted tasks.md to prd.json for Relentless autonomous agent
+- Split original 7 stories into 9 smaller stories for single-iteration completion:
+  - US-001: Admin Creates Tag - Backend (create mutation + helpers)
+  - US-002: Tag Queries - getBySlug and getByIds
+  - US-003: Tag Query - getContentByTagId
+  - US-004: Tag Query - list with content counts
+  - US-005: TagBadge and TagList Components
+  - US-006: Tag Detail Page
+  - US-007: Tags Listing Page
+  - US-008: Admin Update Tag Mutation
+  - US-009: Admin Delete Tag Mutation
+- Ordered by dependencies: backend queries first, then components, then pages
+- Ready to run: `relentless run --feature 005-tag-system`
+
+## 2026-01-16 - US-001: Admin Creates Tag - Backend
+
+**Implemented:**
+- Created `convex/tags.ts` with generateSlug and validateSlug helper functions
+- Implemented `tags.create` mutation with admin role enforcement via requireRole
+- Auto-generates URL-friendly slugs from tag names (lowercase, hyphens, max 50 chars)
+- Validates slug format (2-50 chars, lowercase alphanumeric with single hyphens)
+- Checks slug uniqueness using by_slug index
+- Added convex-test package for testing Convex functions
+- Updated vitest.config.ts to support edge-runtime for Convex tests
+
+**Files Changed:**
+- convex/tags.ts (new)
+- __tests__/convex/tags.test.ts (new)
+- vitest.config.ts (modified)
+- package.json (modified)
+- bun.lock (modified)
+- convex/_generated/api.d.ts (regenerated)
+
+**Tests (30 total):**
+- generateSlug: 10 tests covering case conversion, special chars, truncation
+- validateSlug: 14 tests covering format validation, length limits
+- tags.create mutation: 6 tests covering admin access, slug handling, errors
+
+**Learnings:**
+- convex-test requires vitest (not bun test) due to import.meta.glob dependency
+- Need to configure edge-runtime environment in vitest for Convex tests
+- convex-test withIdentity() sets ctx.auth.getUserIdentity() for auth testing
+- Must run `bunx convex codegen` to regenerate types after adding new functions
+
+---
+
+## 2026-01-17 - US-002: Tag Queries - getBySlug and getByIds
+
+**Implemented:**
+- Added `tags.getBySlug` query: fetches tag by slug using by_slug index, returns full tag object or null
+- Added `tags.getByIds` query: fetches multiple tags by ID array, returns array with _id, name, slug
+- Both queries are public (no auth required) for frontend use
+- getByIds gracefully handles non-existent IDs by filtering them out
+
+**Files Changed:**
+- convex/tags.ts (modified - added getBySlug and getByIds queries)
+- __tests__/convex/tags.test.ts (modified - added 7 tests)
+
+**Tests Added (7 total):**
+- getBySlug: returns tag when slug exists, returns null when slug does not exist, returns tag without description when not set
+- getByIds: returns tags for given IDs, returns empty array when no IDs provided, returns empty array when none exist, returns only existing tags when some IDs are invalid
+
+**Learnings:**
+- Convex query return types need to use v.union() for nullable returns
+- db.get() returns null for deleted/non-existent IDs (doesn't throw)
+- Promise.all with db.get is efficient for fetching multiple documents by ID
+
+---
+
+## 2026-01-17 - US-003: Tag Query - getContentByTagId
+
+**Implemented:**
+- Added `tags.getContentByTagId` query: fetches all published content for a specific tag
+- Returns object with five arrays: events, projects, experiments, articles, videos
+- Events: filtered where isArchived !== true, ordered by date descending
+- Projects: filtered where isPublished === true, ordered by _creationTime descending
+- Experiments: filtered where isPublished === true, ordered by _creationTime descending
+- Articles: all articles with tag, ordered by publishedAt descending
+- Videos: filtered where isPublished === true, ordered by _creationTime descending
+- Each content item includes: _id, title, slug, plus type-specific fields (date/isVirtual for events, description for projects, status for experiments, publishedAt for articles, youtubeId for videos)
+
+**Files Changed:**
+- convex/tags.ts (modified - added getContentByTagId query)
+- __tests__/convex/tags.test.ts (modified - added 9 tests for getContentByTagId)
+
+**Tests Added (9 total):**
+- returns empty arrays when tag has no content
+- returns events that have the tag and are not archived
+- returns published projects with the tag
+- returns published experiments with the tag
+- returns articles with the tag ordered by publishedAt desc
+- returns published videos with the tag
+- returns content from multiple types for the same tag
+- does not return content without the tag
+- orders events by date descending
+
+**Learnings:**
+- Convex queries need to collect all items first then filter in memory (no "contains" index)
+- Promise.all is efficient for parallel collection queries
+- Status type needs v.union with all literal values to match schema exactly
+
+---
+
+## 2026-01-17 - US-004: Tag Query - list with content counts
+
+**Implemented:**
+- Added `tags.list` query: fetches all tags with content counts for the tags listing page
+- Returns array of objects with: _id, _creationTime, name, slug, description (optional), contentCount
+- Tags sorted alphabetically by name using case-insensitive comparison (localeCompare)
+- Content counts only include published content:
+  - Events: isArchived !== true
+  - Projects: isPublished === true
+  - Experiments: isPublished === true
+  - Articles: always counted (no publish state)
+  - Videos: isPublished === true
+- Uses Map to efficiently count content items per tag
+
+**Files Changed:**
+- convex/tags.ts (modified - added list query)
+- __tests__/convex/tags.test.ts (modified - added 9 tests for tags.list)
+
+**Tests Added (9 total):**
+- returns empty array when no tags exist
+- returns all tags sorted alphabetically by name (case-insensitive)
+- returns tags with correct shape including contentCount
+- returns contentCount of 0 for tag with no content
+- counts published content across all content types
+- does not count unpublished content
+- does not count archived events
+- returns correct counts for multiple tags
+- returns tag without description when description is not set
+
+**Learnings:**
+- Case-insensitive sorting in JavaScript: use `a.name.toLowerCase().localeCompare(b.name.toLowerCase())`
+- Map is efficient for counting by ID - O(1) lookup and update
+- Content counting logic mirrors getContentByTagId filtering for consistency
+
+---
+
+## 2026-01-17 - US-005: TagBadge and TagList Components
+
+**Implemented:**
+- Created `TagBadge` component: clickable pill linking to `/tags/[slug]`
+  - Accepts `tag` prop with name and slug
+  - Supports `size` prop: 'sm' (text-xs, px-2, py-0.5) or 'md' (text-sm, px-3, py-1)
+  - Styled as rounded pill with gray background and hover state
+  - Uses Next.js Link component for client-side navigation
+- Created `TagList` component: renders multiple TagBadge components
+  - Accepts `tagIds` prop (array of tag IDs) and optional `size` prop
+  - Uses `useQuery(api.tags.getByIds)` to fetch tag data
+  - Renders nothing when tagIds is empty/undefined or query returns empty
+  - Horizontal flex layout with wrapping (gap-2)
+  - Skips query entirely when no tagIds provided (uses "skip" argument)
+
+**Files Changed:**
+- components/tags/TagBadge.tsx (new)
+- components/tags/TagList.tsx (new)
+- __tests__/components/tags/TagBadge.test.tsx (new)
+- __tests__/components/tags/TagList.test.tsx (new)
+
+**Tests Added (21 total):**
+- TagBadge (8 tests): correct href, displays name, rounded pill styling, small/medium size classes, special characters, long names
+- TagList (13 tests): empty states (undefined, empty array, loading), renders multiple badges, correct links, flex layout with wrapping, size prop passthrough, skip query when no tagIds
+
+**Learnings:**
+- Convex `useQuery` accepts "skip" as second argument to prevent unnecessary queries
+- Vitest requires `bun run test` (vitest run) not `bun test` for jsdom environment
+- Component tests can mock useQuery to test different data scenarios
+- TagList "use client" directive required for useQuery hook
+
+---
+
+## 2026-01-17 - US-006: Tag Detail Page
+
+**Implemented:**
+- Created `TagContentSection` component: displays a section of content items for a content type
+  - Accepts `title` (string), `items` (array with title and slug), `linkPrefix` (string)
+  - Renders section with h2 title and item count in parentheses
+  - Returns null when items array is empty (hidden section)
+  - Each item renders as a link to `linkPrefix/[slug]`
+  - Styled with Tailwind: section margin, heading styles, hover links
+- Created `/tags/[slug]` page: tag detail page showing all content for a tag
+  - Uses `useQuery(api.tags.getBySlug, { slug })` to fetch tag data
+  - Uses `useQuery(api.tags.getContentByTagId, { tagId })` with skip when tag not loaded
+  - Shows loading state while tag query is undefined
+  - Calls `notFound()` when tag is null to show 404
+  - Displays tag name as h1 title, optional description paragraph
+  - Renders TagContentSection for each content type with items
+  - Uses correct URL prefixes: /events, /projects, /lab, /blog, /videos
+  - Shows empty state message when no content tagged
+
+**Files Changed:**
+- components/tags/TagContentSection.tsx (new)
+- app/tags/[slug]/page.tsx (new)
+- __tests__/components/tags/TagContentSection.test.tsx (new)
+- __tests__/app/tags/TagDetailPage.test.tsx (updated existing tests)
+
+**Tests Added (7 total):**
+- TagContentSection: renders with title and count, correct links, hidden when empty, handles single item, special characters, heading element, items in order
+
+**Learnings:**
+- Next.js `notFound()` function throws an error, so TypeScript needs `return null` after it
+- When text is split across elements (e.g., `<span>` inside `<p>`), use more specific queries
+- URL prefixes should match actual app routing: /blog for articles, /lab for experiments
+- Existing test files may need updates when implementation changes
+
+---
+
+## 2026-01-17 - US-007: Tags Listing Page
+
+**Implemented:**
+- Created `app/tags/page.tsx`: tags listing page displaying all tags in the system
+  - Uses `useQuery(api.tags.list)` to fetch all tags
+  - Shows loading state while query is undefined
+  - Shows empty state when no tags exist: "No tags have been created yet"
+  - Displays tags in responsive grid layout (1 col mobile, 2 cols sm, 3 cols lg)
+  - Each tag rendered as a card with name and content count
+  - Content count uses singular/plural ("1 item" vs "5 items")
+  - Each tag links to `/tags/[slug]` detail page
+  - Styled with Tailwind: border, hover states, dark mode support
+
+**Files Changed:**
+- app/tags/page.tsx (new)
+- __tests__/app/tags/TagsListingPage.test.tsx (new)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/prd.json (updated)
+
+**Tests Added (11 total):**
+- Loading state: shows loading message
+- Empty state: shows message when no tags exist
+- Tags display: page title, all tags displayed, content counts, correct links
+- Grid layout: responsive grid classes present
+- Query calls: calls tags.list query
+- Singular/plural: correct item/items text based on count
+
+**Learnings:**
+- Grid layout with Tailwind: use `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` for responsive columns
+- Conditional singular/plural: `{count} {count === 1 ? "item" : "items"}`
+- Test for grid by checking for `.grid` class selector
+- Follow existing page patterns (TagDetailPage) for consistency in loading/empty states
+
+---
+
+## 2026-01-17 - US-008: Admin Update Tag Mutation
+
+**Implemented:**
+- Added `tags.update` mutation to `convex/tags.ts`
+  - Args: id (tag ID), name (required string), description (optional string)
+  - Uses `requireRole(ctx, ['admin'])` to enforce admin-only access
+  - Checks if tag exists, throws error if not found
+  - Uses `ctx.db.patch` to update name and description only
+  - Slug is immutable (not updated even if name changes)
+  - Returns null on success
+  - Preserves description when not provided in args (using "in" check)
+
+**Files Changed:**
+- convex/tags.ts (modified - added update mutation)
+- __tests__/convex/tags.test.ts (modified - added 9 tests)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/prd.json (updated)
+
+**Tests Added (9 total):**
+- admin can update tag name and preserve existing description
+- admin can update tag description
+- admin can update both name and description
+- preserves description when not provided in update
+- non-admin throws AuthorizationError
+- unauthenticated user throws AuthenticationError
+- throws error when tag ID not found
+- slug remains immutable even if different name is provided
+
+**Learnings:**
+- Convex optional args: use "description" in args check to distinguish between "not provided" vs "explicitly undefined"
+- The patch object should only include description if explicitly passed to allow preserving existing values
+- Slug immutability: never include slug in the patch object, even if name changes
+
+---
+
+## 2026-01-17 - US-009: Admin Delete Tag Mutation
+
+**Implemented:**
+- Added `tags.remove` mutation to `convex/tags.ts`
+  - Args: id (tag ID to delete)
+  - Uses `requireRole(ctx, ['admin'])` to enforce admin-only access
+  - Checks if tag exists, throws error if not found
+  - Removes tag ID from all content types in parallel (events, projects, experiments, articles, videos)
+  - For each content type: queries all, filters for items with tag, patches to remove tag from array
+  - Deletes the tag document using `ctx.db.delete(id)`
+  - Returns null on success
+
+**Files Changed:**
+- convex/tags.ts (modified - added remove mutation)
+- __tests__/convex/tags.test.ts (modified - added 7 tests)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/progress.txt (updated)
+
+**Tests Added (7 total):**
+- admin can delete a tag
+- removes tag reference from all content types when deleted
+- preserves other tags when removing one tag from content
+- handles content with no tags field gracefully
+- non-admin throws AuthorizationError
+- unauthenticated user throws AuthenticationError
+- throws error when tag ID not found
+
+**Learnings:**
+- Array filter to remove specific ID: `tags.filter((tagId) => tagId !== args.id)`
+- Promise.all with spread operator to combine multiple update arrays
+- Content without tags field (undefined) is safely skipped by filter check
+- Testing tag removal: verify content still exists but tag array doesn't contain removed ID
+
+---

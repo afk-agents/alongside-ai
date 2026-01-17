@@ -10,6 +10,11 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.{test,spec}.{ts,tsx}"],
     passWithNoTests: true,
+    server: {
+      deps: {
+        inline: ["convex-test"],
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
@@ -17,6 +22,7 @@ export default defineConfig({
         "app/**/*.{ts,tsx}",
         "components/**/*.{ts,tsx}",
         "lib/**/*.{ts,tsx}",
+        "convex/**/*.ts",
       ],
       exclude: ["**/*.d.ts", "**/*.test.{ts,tsx}", "convex/_generated/**"],
     },
