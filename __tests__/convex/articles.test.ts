@@ -2069,3 +2069,509 @@ describe("articles.parseRssFeed action (structure tests)", () => {
     expect(notImported).toBe(false);
   });
 });
+
+// ============================================================================
+// RSS Import - importFromRss mutation
+// ============================================================================
+
+describe("articles.importFromRss mutation", () => {
+  it("requires admin role", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      guestCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test Article",
+            content: "Test content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+      })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("throws for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const authorId = await createPublishedProfile(t);
+
+    await expect(
+      t.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test Article",
+            content: "Test content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+      })
+    ).rejects.toThrow(/Authentication required/);
+  });
+
+  it("creates articles from provided items", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const publishedAt = Date.now();
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "First Article",
+          content: "First content",
+          publishedAt,
+          substackUrl: "https://example.substack.com/p/first",
+          excerpt: "First excerpt",
+        },
+        {
+          title: "Second Article",
+          content: "Second content",
+          publishedAt: publishedAt - 86400000,
+          substackUrl: "https://example.substack.com/p/second",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(2);
+    expect(result.skipped).toBe(0);
+
+    // Verify articles were created
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+
+    const first = articles.find((a) => a.title === "First Article");
+    expect(first).toBeDefined();
+    expect(first?.slug).toBe("first-article");
+    expect(first?.content).toBe("First content");
+    expect(first?.authorId).toBe(authorId);
+    expect(first?.substackUrl).toBe("https://example.substack.com/p/first");
+    expect(first?.excerpt).toBe("First excerpt");
+
+    const second = articles.find((a) => a.title === "Second Article");
+    expect(second).toBeDefined();
+    expect(second?.slug).toBe("second-article");
+  });
+
+  it("auto-generates slug from title", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "How to Build an AI Assistant",
+          content: "Guide content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/ai-assistant",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].slug).toBe("how-to-build-an-ai-assistant");
+  });
+
+  it("handles duplicate slugs by appending counter", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create an existing article with a slug
+    await createTestArticle(t, profileId, {
+      title: "Existing Article",
+      slug: "test-article",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Test Article", // Would generate same slug
+          content: "New content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/test-new",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(1);
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    // The new article should have a different slug
+    const newArticle = articles.find(
+      (a) => a.substackUrl === "https://example.substack.com/p/test-new"
+    );
+    expect(newArticle).toBeDefined();
+    expect(newArticle?.slug).not.toBe("test-article");
+    expect(newArticle?.slug).toMatch(/^test-article-\d+$/);
+  });
+
+  it("skips articles with existing substackUrl", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create an existing article with a substackUrl
+    await createTestArticle(t, profileId, {
+      title: "Already Imported",
+      slug: "already-imported",
+      substackUrl: "https://example.substack.com/p/existing",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Should Skip",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing", // Same URL
+        },
+        {
+          title: "Should Import",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(1);
+    expect(result.skipped).toBe(1);
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2); // Original + 1 new
+    const titles = articles.map((a) => a.title);
+    expect(titles).toContain("Already Imported");
+    expect(titles).toContain("Should Import");
+    expect(titles).not.toContain("Should Skip");
+  });
+
+  it("assigns specified author to all imported articles", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article 1",
+          content: "Content 1",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a1",
+        },
+        {
+          title: "Article 2",
+          content: "Content 2",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a2",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    expect(articles[0].authorId).toBe(authorId);
+    expect(articles[1].authorId).toBe(authorId);
+  });
+
+  it("applies optional tags to all imported articles", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article 1",
+          content: "Content 1",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a1",
+        },
+        {
+          title: "Article 2",
+          content: "Content 2",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/a2",
+        },
+      ],
+      authorId,
+      tags: [tagAI, tagML],
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(2);
+    expect(articles[0].tags).toEqual([tagAI, tagML]);
+    expect(articles[1].tags).toEqual([tagAI, tagML]);
+  });
+
+  it("auto-generates excerpt from first 160 chars if not provided", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const longContent =
+      "This is a very long article content that exceeds one hundred sixty characters and should be truncated to create an automatic excerpt for the article preview display.";
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Long Article",
+          content: longContent,
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/long",
+          // No excerpt provided
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].excerpt).toBeDefined();
+    expect(articles[0].excerpt?.length).toBeLessThanOrEqual(160);
+    expect(articles[0].excerpt).toBe(longContent.slice(0, 160));
+  });
+
+  it("uses provided excerpt when available", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Article with Excerpt",
+          content: "Full content here",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/excerpt",
+          excerpt: "Custom excerpt provided",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].excerpt).toBe("Custom excerpt provided");
+  });
+
+  it("verifies authorId references existing published profile", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create an unpublished profile
+    const unpublishedId = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      return await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "unlocked", // Not published
+      });
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test",
+            content: "Content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId: unpublishedId,
+      })
+    ).rejects.toThrow(/Author profile must exist and be published/);
+  });
+
+  it("verifies all tagIds exist", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const deletedTagId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", { name: "Temp", slug: "temp" });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.articles.importFromRss, {
+        items: [
+          {
+            title: "Test",
+            content: "Content",
+            publishedAt: Date.now(),
+            substackUrl: "https://example.substack.com/p/test",
+          },
+        ],
+        authorId,
+        tags: [deletedTagId],
+      })
+    ).rejects.toThrow(/One or more tags do not exist/);
+  });
+
+  it("returns { imported: 0, skipped: 0 } for empty items array", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [],
+      authorId,
+    });
+
+    expect(result.imported).toBe(0);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("returns correct counts with mixed import and skip", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    // Create some existing articles
+    await createTestArticle(t, profileId, {
+      title: "Existing 1",
+      slug: "existing-1",
+      substackUrl: "https://example.substack.com/p/existing-1",
+    });
+    await createTestArticle(t, profileId, {
+      title: "Existing 2",
+      slug: "existing-2",
+      substackUrl: "https://example.substack.com/p/existing-2",
+    });
+
+    const result = await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Skip 1",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing-1",
+        },
+        {
+          title: "Skip 2",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/existing-2",
+        },
+        {
+          title: "Import 1",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-1",
+        },
+        {
+          title: "Import 2",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-2",
+        },
+        {
+          title: "Import 3",
+          content: "C",
+          publishedAt: Date.now(),
+          substackUrl: "https://example.substack.com/p/new-3",
+        },
+      ],
+      authorId,
+    });
+
+    expect(result.imported).toBe(3);
+    expect(result.skipped).toBe(2);
+  });
+
+  it("preserves publishedAt from RSS items", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const customPublishedAt = Date.now() - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Old Article",
+          content: "Content",
+          publishedAt: customPublishedAt,
+          substackUrl: "https://example.substack.com/p/old",
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].publishedAt).toBe(customPublishedAt);
+  });
+
+  it("stores substackUrl for linking back", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+    const authorId = await createPublishedProfile(t);
+
+    const substackUrl = "https://mysubstack.substack.com/p/original-article";
+
+    await adminCtx.mutation(api.articles.importFromRss, {
+      items: [
+        {
+          title: "Linked Article",
+          content: "Content",
+          publishedAt: Date.now(),
+          substackUrl,
+        },
+      ],
+      authorId,
+    });
+
+    const articles = await t.run(async (ctx) => {
+      return await ctx.db.query("articles").collect();
+    });
+
+    expect(articles).toHaveLength(1);
+    expect(articles[0].substackUrl).toBe(substackUrl);
+  });
+});

@@ -1143,26 +1143,26 @@ As an admin, I need to import selected articles from a parsed RSS feed, so that 
 
 ### Acceptance Criteria
 
-- [ ] `articles.importFromRss` mutation accepts array of parsed articles
-- [ ] Creates articles with auto-generated slugs
-- [ ] Assigns specified author to all articles
-- [ ] Optionally applies tags to all articles
-- [ ] Skips already-imported articles (matching substackUrl)
-- [ ] Returns count of imported and skipped articles
-- [ ] Requires admin role
+- [x] `articles.importFromRss` mutation accepts array of parsed articles
+- [x] Creates articles with auto-generated slugs
+- [x] Assigns specified author to all articles
+- [x] Optionally applies tags to all articles
+- [x] Skips already-imported articles (matching substackUrl)
+- [x] Returns count of imported and skipped articles
+- [x] Requires admin role
 
 ### Tasks
 
 1. **Implement importFromRss mutation**
-   - Require admin role
-   - Accept: items array, authorId, optional tags array
-   - For each item:
-     - Generate slug from title
-     - Check for existing substackUrl
-     - If new: insert article with all fields
-     - If exists: skip
-   - Track imported and skipped counts
-   - Return { imported, skipped }
+   - [x] Require admin role
+   - [x] Accept: items array, authorId, optional tags array
+   - [x] For each item:
+     - [x] Generate slug from title
+     - [x] Check for existing substackUrl
+     - [x] If new: insert article with all fields
+     - [x] If exists: skip
+   - [x] Track imported and skipped counts
+   - [x] Return { imported, skipped }
 
 ### Test Scenarios
 

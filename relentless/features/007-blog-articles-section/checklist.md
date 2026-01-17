@@ -110,9 +110,9 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 - [x] `articles.parseRssFeed` action fetches and parses RSS URL
 - [x] RSS items include title, content, publishedAt, substackUrl
 - [x] Already-imported articles marked with `alreadyImported: true`
-- [ ] `articles.importFromRss` creates articles from selected items
-- [ ] Duplicate detection via substackUrl prevents re-import
-- [ ] Returns import/skip counts
+- [x] `articles.importFromRss` creates articles from selected items
+- [x] Duplicate detection via substackUrl prevents re-import
+- [x] Returns import/skip counts
 
 ---
 
@@ -332,7 +332,7 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 - [ ] Admin queries: `listAdmin`, `get` - require admin role
 - [ ] Admin mutations: `create`, `update`, `remove` - require admin role
 - [x] Admin actions: `parseRssFeed` - require admin role
-- [ ] Admin mutation: `importFromRss` - require admin role
+- [x] Admin mutation: `importFromRss` - require admin role
 - [ ] Unauthorized access returns clear error (not data leak)
 
 ### Content Security
@@ -346,7 +346,7 @@ This checklist validates the Blog/Articles Section feature against spec requirem
 
 - [ ] Author deletion does not break article display (shows "Unknown Author")
 - [ ] Tag deletion handled gracefully (tags.remove cleans up articles)
-- [ ] Duplicate substackUrl prevented in imports
+- [x] Duplicate substackUrl prevented in imports
 
 ---
 

@@ -1106,3 +1106,126 @@ export const parseRssFeed = action({
     return parsedItems;
   },
 });
+
+/**
+ * Import result validator.
+ */
+const importResultValidator = v.object({
+  imported: v.number(),
+  skipped: v.number(),
+});
+
+/**
+ * RSS item for import validator.
+ */
+const rssItemForImportValidator = v.object({
+  title: v.string(),
+  content: v.string(),
+  publishedAt: v.number(),
+  substackUrl: v.string(),
+  excerpt: v.optional(v.string()),
+});
+
+/**
+ * Import selected articles from a parsed RSS feed.
+ *
+ * Creates articles from the provided items, automatically generating slugs
+ * from titles. Skips any items where the substackUrl already exists.
+ * Assigns the specified author and optional tags to all imported articles.
+ *
+ * Requires admin role.
+ *
+ * @param items - Array of parsed RSS items to import
+ * @param authorId - Profile ID to assign as author for all articles
+ * @param tags - Optional array of tag IDs to apply to all articles
+ *
+ * @returns Object with imported count and skipped count
+ */
+export const importFromRss = mutation({
+  args: {
+    items: v.array(rssItemForImportValidator),
+    authorId: v.id("profiles"),
+    tags: v.optional(v.array(v.id("tags"))),
+  },
+  returns: importResultValidator,
+  handler: async (ctx, args): Promise<{ imported: number; skipped: number }> => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    // Verify author exists and is published
+    const author = await ctx.db.get(args.authorId);
+    if (!author || author.profileStatus !== "published") {
+      throw new Error(
+        "Author profile must exist and be published to import articles."
+      );
+    }
+
+    // Verify all tags exist if provided
+    if (args.tags && args.tags.length > 0) {
+      const tags = await Promise.all(args.tags.map((id) => ctx.db.get(id)));
+      if (tags.some((tag) => tag === null)) {
+        throw new Error("One or more tags do not exist.");
+      }
+    }
+
+    // Get existing substack URLs to detect duplicates
+    const allArticles = await ctx.db.query("articles").collect();
+    const existingUrls = new Set(
+      allArticles
+        .filter((a) => a.substackUrl)
+        .map((a) => a.substackUrl as string)
+    );
+
+    // Also collect existing slugs for uniqueness checking
+    const existingSlugs = new Set(allArticles.map((a) => a.slug));
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const item of args.items) {
+      // Skip if substackUrl already exists
+      if (existingUrls.has(item.substackUrl)) {
+        skipped++;
+        continue;
+      }
+
+      // Generate slug from title
+      let slug = generateSlug(item.title);
+
+      // Handle duplicate slugs by appending counter
+      if (existingSlugs.has(slug)) {
+        let counter = 1;
+        let candidateSlug = `${slug}-${counter}`;
+        while (existingSlugs.has(candidateSlug)) {
+          counter++;
+          candidateSlug = `${slug}-${counter}`;
+        }
+        slug = candidateSlug;
+      }
+
+      // Add to set to prevent duplicates within this batch
+      existingSlugs.add(slug);
+
+      // Auto-generate excerpt from first 160 chars of content if not provided
+      const excerpt = item.excerpt ?? (item.content ? item.content.slice(0, 160) : undefined);
+
+      // Insert the article
+      await ctx.db.insert("articles", {
+        title: item.title,
+        slug,
+        content: item.content,
+        authorId: args.authorId,
+        publishedAt: item.publishedAt,
+        excerpt,
+        tags: args.tags,
+        substackUrl: item.substackUrl,
+      });
+
+      // Mark this URL as imported to prevent duplicates within this batch
+      existingUrls.add(item.substackUrl);
+      imported++;
+    }
+
+    return { imported, skipped };
+  },
+});

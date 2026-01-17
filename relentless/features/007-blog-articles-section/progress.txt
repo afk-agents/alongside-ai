@@ -1,8 +1,8 @@
 ---
 feature: 007-blog-articles-section
 started: '2026-01-17T19:54:07.452Z'
-last_updated: '2026-01-17T21:12:00.000Z'
-stories_completed: 20
+last_updated: '2026-01-17T21:03:00.000Z'
+stories_completed: 21
 patterns: []
 ---
 # Blog Articles Section - Progress Log
@@ -441,5 +441,39 @@ patterns: []
 - `ParsedRssItem` interface defined separately from validator for type safety
 - Auth in actions requires `ctx.auth.getUserIdentity()` and then a separate query to get profile
 - Internal queries must be defined before the action that references them (or use proper imports)
+
+---
+
+## 2026-01-17 - US-021: RSS Import Mutation
+
+**Implemented:**
+- `articles.importFromRss` mutation for importing selected articles from parsed RSS feed
+- Accepts items array (with title, content, publishedAt, substackUrl, optional excerpt), authorId, and optional tags
+- Requires admin role via `requireRole(ctx, ["admin"])`
+- Validates author exists and is published
+- Validates all tags exist if provided
+- Auto-generates slugs from titles using existing `generateSlug` function
+- Handles duplicate slugs by appending counter (e.g., "test-article-1", "test-article-2")
+- Skips articles with existing substackUrl to prevent duplicates
+- Auto-generates excerpt from first 160 chars of content if not provided
+- Returns `{ imported: number, skipped: number }` count summary
+- 16 comprehensive tests covering all acceptance criteria
+
+**Files Changed:**
+- convex/articles.ts (added importFromRss mutation with validators)
+- __tests__/convex/articles.test.ts (added 16 tests for importFromRss)
+- relentless/features/007-blog-articles-section/tasks.md (updated checkboxes)
+- relentless/features/007-blog-articles-section/checklist.md (updated checkboxes)
+
+**Verification:**
+- `bunx tsc --noEmit` passes (0 errors)
+- `bun run lint` passes (0 warnings)
+- `bun run test` passes (545 tests)
+
+**Learnings:**
+- Batch imports need to track slugs within the batch to avoid conflicts when multiple items would generate the same slug
+- Existing URL check using Set provides O(1) lookup performance
+- Slug uniqueness handling follows pattern: base-slug, base-slug-1, base-slug-2, etc.
+- Author verification checks both existence and published status per specification
 
 ---
