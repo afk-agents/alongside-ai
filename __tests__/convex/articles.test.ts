@@ -508,3 +508,227 @@ describe("articles.listFeatured query", () => {
     expect(article).toHaveProperty("author");
   });
 });
+
+// Helper to create a profile with full details for testing getBySlug
+async function createFullTestProfile(t: TestContext) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {});
+    const profileId = await ctx.db.insert("profiles", {
+      userId,
+      role: "member",
+      profileStatus: "published",
+      displayName: "Full Author",
+      slug: "full-author",
+      photoUrl: "https://example.com/photo.jpg",
+      bio: "This is a test author bio.",
+    });
+    return { userId, profileId };
+  });
+}
+
+describe("articles.getBySlug query", () => {
+  it("returns null when article does not exist", async () => {
+    const t = convexTest(schema);
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "nonexistent-article",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns article with full details by slug", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Test Article",
+      slug: "test-article",
+      content: "Full article content here.",
+      excerpt: "Short excerpt",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "test-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("Test Article");
+    expect(result?.slug).toBe("test-article");
+    expect(result?.content).toBe("Full article content here.");
+    expect(result?.excerpt).toBe("Short excerpt");
+  });
+
+  it("includes full author profile fields", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Article With Author",
+      slug: "article-with-author",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-with-author",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.author).toBeDefined();
+    expect(result?.author?.displayName).toBe("Full Author");
+    expect(result?.author?.slug).toBe("full-author");
+    expect(result?.author?.photoUrl).toBe("https://example.com/photo.jpg");
+    expect(result?.author?.bio).toBe("This is a test author bio.");
+  });
+
+  it("handles deleted author gracefully", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "Orphan Article",
+      slug: "orphan-article",
+    });
+
+    // Delete the profile
+    await t.run(async (ctx) => {
+      await ctx.db.delete(profileId);
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "orphan-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.author).toBeNull();
+  });
+
+  it("includes tags with id, name, and slug", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagAI = await createTestTag(t, "AI", "ai");
+    const tagML = await createTestTag(t, "ML", "ml");
+
+    await createTestArticle(t, profileId, {
+      title: "Tagged Article",
+      slug: "tagged-article",
+      tags: [tagAI, tagML],
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "tagged-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toHaveLength(2);
+
+    const aiTag = result?.tags.find((t) => t.slug === "ai");
+    expect(aiTag).toBeDefined();
+    expect(aiTag?._id).toBe(tagAI);
+    expect(aiTag?.name).toBe("AI");
+
+    const mlTag = result?.tags.find((t) => t.slug === "ml");
+    expect(mlTag).toBeDefined();
+    expect(mlTag?._id).toBe(tagML);
+    expect(mlTag?.name).toBe("ML");
+  });
+
+  it("filters out deleted tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagToDelete = await createTestTag(t, "Delete Me", "delete-me");
+    const tagToKeep = await createTestTag(t, "Keep Me", "keep-me");
+
+    await createTestArticle(t, profileId, {
+      title: "Article With Mixed Tags",
+      slug: "article-with-mixed-tags",
+      tags: [tagToDelete, tagToKeep],
+    });
+
+    // Delete one tag
+    await t.run(async (ctx) => {
+      await ctx.db.delete(tagToDelete);
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-with-mixed-tags",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toHaveLength(1);
+    expect(result?.tags[0].slug).toBe("keep-me");
+  });
+
+  it("returns empty tags array when article has no tags", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    await createTestArticle(t, profileId, {
+      title: "No Tags Article",
+      slug: "no-tags-article",
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "no-tags-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.tags).toEqual([]);
+  });
+
+  it("includes all article fields in response", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+    const tagId = await createTestTag(t, "Test", "test");
+
+    const publishedAt = Date.now();
+    await createTestArticle(t, profileId, {
+      title: "Complete Article",
+      slug: "complete-article",
+      content: "Full content for the article.",
+      excerpt: "Short excerpt text",
+      tags: [tagId],
+      isFeatured: true,
+      substackUrl: "https://example.substack.com/p/complete-article",
+      publishedAt,
+    });
+
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "complete-article",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?._id).toBeDefined();
+    expect(result?.title).toBe("Complete Article");
+    expect(result?.slug).toBe("complete-article");
+    expect(result?.content).toBe("Full content for the article.");
+    expect(result?.excerpt).toBe("Short excerpt text");
+    expect(result?.publishedAt).toBe(publishedAt);
+    expect(result?.isFeatured).toBe(true);
+    expect(result?.substackUrl).toBe(
+      "https://example.substack.com/p/complete-article"
+    );
+    expect(result?.author).toBeDefined();
+    expect(result?.tags).toHaveLength(1);
+  });
+
+  it("uses by_slug index for efficient lookup", async () => {
+    const t = convexTest(schema);
+    const { profileId } = await createFullTestProfile(t);
+
+    // Create multiple articles
+    for (let i = 0; i < 10; i++) {
+      await createTestArticle(t, profileId, {
+        title: `Article ${i}`,
+        slug: `article-${i}`,
+      });
+    }
+
+    // Query should still be efficient with index
+    const result = await t.query(api.articles.getBySlug, {
+      slug: "article-5",
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.title).toBe("Article 5");
+  });
+});
