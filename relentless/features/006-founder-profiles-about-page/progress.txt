@@ -2,7 +2,7 @@
 feature: Founder Profiles & About Page
 started: 2026-01-17
 last_updated: 2026-01-17
-stories_completed: 10
+stories_completed: 14
 ---
 
 # Progress Log: Founder Profiles & About Page
@@ -237,3 +237,140 @@ stories_completed: 10
 - Need to mock `convex/react` in tests that use components with `useQuery`
 
 ---
+
+## 2026-01-17 - US-011: Profile Authored Content Display
+
+**Implemented:**
+- Created `components/profiles/AuthoredContent.tsx` displaying content by type:
+  - Projects, Experiments, Articles, Videos sections
+  - Each item links to its respective page (`/projects/[slug]`, etc.)
+  - Content sections hidden when empty
+  - Entire component hidden when no authored content exists
+- Updated `ProfilePage` component to integrate authored content:
+  - Added `useQuery(api.profiles.getAuthoredContent)` call
+  - Renders AuthoredContent section after "Working On Now"
+
+**Files Changed:**
+- `components/profiles/AuthoredContent.tsx` (created)
+- `components/profiles/index.ts` (updated - added AuthoredContent export)
+- `components/profiles/ProfilePage.tsx` (updated - integrated AuthoredContent)
+- `__tests__/components/profiles/AuthoredContent.test.tsx` (already existed - 16 tests)
+
+**Learnings:**
+- getAuthoredContent query was already implemented in previous iteration
+- Tests already existed for AuthoredContent component
+- Used config object pattern for content type URL prefixes and labels
+
+---
+
+## 2026-01-17 - US-012: Admin Profile List Page
+
+**Implemented:**
+- Added `list` query to `convex/profiles.ts`:
+  - Requires admin role via `requireRole(ctx, ["admin"])`
+  - Returns all profiles with minimal fields: _id, displayName, role, profileStatus, slug
+  - Sorted by creation time descending
+  - Uses `profileListItemValidator` for return type
+- Created `app/admin/profiles/page.tsx`:
+  - Admin authentication check via `useQuery(api.users.getCurrentUserProfile)`
+  - Table display with columns: Name, Role, Status, Slug, Edit
+  - Role badges (admin=purple, member=blue, guest=gray)
+  - Status badges (locked=red, unlocked=yellow, published=green)
+  - Edit links to `/admin/profiles/[id]/edit`
+  - Loading skeleton state
+  - Empty state message
+
+**Files Changed:**
+- `convex/profiles.ts` (updated - added profileListItemValidator and list query)
+- `app/admin/profiles/page.tsx` (created)
+- `__tests__/convex/profiles.test.ts` (updated - 7 new tests)
+
+**Learnings:**
+- TDD workflow: wrote 7 tests first, then implemented list query
+- Reused existing admin page pattern for authorization check
+- Badge components provide visual distinction for role/status
+
+---
+
+## 2026-01-17 - US-013: Admin Profile Editor Page
+
+**Implemented:**
+- Added `get` query to `convex/profiles.ts`:
+  - Requires admin role via `requireRole(ctx, ["admin"])`
+  - Returns full profile by ID with all fields
+  - Uses `fullProfileValidator` for return type
+  - Returns null for non-existent profiles
+- Created `components/profiles/ProfileEditor.tsx`:
+  - Photo upload with preview using Convex storage
+  - Slug input with auto-generation from displayName
+  - Social links grouped inputs (LinkedIn, Twitter, GitHub, Website)
+  - Skills tag input (comma-separated parsing)
+  - Profile status select dropdown
+  - Success/error toast messages
+  - Loading states for save and upload
+- Created `app/admin/profiles/[id]/edit/page.tsx`:
+  - Admin authentication check
+  - Profile loading skeleton
+  - Not found handling
+  - Back to profiles link
+
+**Files Changed:**
+- `convex/profiles.ts` (updated - added fullProfileValidator and get query)
+- `components/profiles/ProfileEditor.tsx` (created)
+- `components/profiles/index.ts` (updated - added ProfileEditor export)
+- `app/admin/profiles/[id]/edit/page.tsx` (created)
+- `__tests__/convex/profiles.test.ts` (updated - 5 new tests)
+
+**Learnings:**
+- TDD workflow: wrote 5 tests first, then implemented get query
+- Used useState for form fields to allow controlled inputs
+- generateSlug helper provides clean URL-friendly slugs
+- Convex storage requires two-step upload (get URL, then POST)
+
+---
+
+## 2026-01-17 - US-014: Seed Founder Profile Data
+
+**Implemented:**
+- Created `convex/seedFounders.ts` with internal mutation:
+  - Creates David profile with role='admin', profileStatus='published', slug='david'
+  - Creates Nathan profile with role='admin', profileStatus='published', slug='nathan'
+  - Both have displayName, bio, workingOnNow, skills, location, socialLinks
+  - Script is idempotent (checks if profiles exist by slug before creating)
+  - Returns { created: string[], skipped: string[] } for visibility
+
+**Files Changed:**
+- `convex/seedFounders.ts` (created)
+
+**Usage:**
+```bash
+npx convex run seedFounders:seed
+```
+
+**Learnings:**
+- Used internalMutation for scripts not exposed to client
+- Idempotent pattern: check by slug before insert
+- Returns arrays to show what was created vs skipped
+
+---
+
+## FEATURE COMPLETE
+
+All 14 user stories have been implemented:
+
+- US-001: Schema Update (slug, photoStorageId, indexes)
+- US-002: Profile Queries (getFounders, getBySlug)
+- US-003: ProfilePhoto Component
+- US-004: SocialLinks Component
+- US-005: ProfileCard Component
+- US-006: Mission and Values Sections
+- US-007: Founder Section with Dynamic Data
+- US-008: Individual Profile Page Route
+- US-009: Admin Update Mutation
+- US-010: Admin Photo Upload
+- US-011: Profile Authored Content Display
+- US-012: Admin Profile List Page
+- US-013: Admin Profile Editor Page
+- US-014: Seed Founder Profile Data
+
+Total tests added: 46 tests for profiles module

@@ -42,10 +42,18 @@ export default defineSchema({
     workingOnNow: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     location: v.optional(v.string()),
+
+    // URL-friendly identifier for profile pages
+    slug: v.optional(v.string()),
+
+    // Convex file storage ID for profile photo
+    photoStorageId: v.optional(v.id("_storage")),
   })
     .index("by_userId", ["userId"])
     .index("by_role", ["role"])
-    .index("by_profileStatus", ["profileStatus"]),
+    .index("by_profileStatus", ["profileStatus"])
+    .index("by_slug", ["slug"])
+    .index("by_role_and_profileStatus", ["role", "profileStatus"]),
 
   // Unified taxonomy for cross-content discovery
   tags: defineTable({
