@@ -123,6 +123,121 @@ export const create = mutation({
 });
 
 /**
+ * List all tags sorted alphabetically by name (case-insensitive) with content counts.
+ *
+ * Returns array of tags including:
+ * - _id, _creationTime, name, slug, description
+ * - contentCount: total published content items across all content types
+ *
+ * Content is counted as published when:
+ * - Events: not archived (isArchived !== true)
+ * - Projects: isPublished === true
+ * - Experiments: isPublished === true
+ * - Articles: always counted (no publish state)
+ * - Videos: isPublished === true
+ */
+export const list = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("tags"),
+      _creationTime: v.number(),
+      name: v.string(),
+      slug: v.string(),
+      description: v.optional(v.string()),
+      contentCount: v.number(),
+    })
+  ),
+  handler: async (ctx) => {
+    // Fetch all tags
+    const allTags = await ctx.db.query("tags").collect();
+
+    // Fetch all content types in parallel
+    const [allEvents, allProjects, allExperiments, allArticles, allVideos] =
+      await Promise.all([
+        ctx.db.query("events").collect(),
+        ctx.db.query("projects").collect(),
+        ctx.db.query("experiments").collect(),
+        ctx.db.query("articles").collect(),
+        ctx.db.query("videos").collect(),
+      ]);
+
+    // Build a map of tagId -> content count
+    const tagContentCounts = new Map<string, number>();
+
+    // Initialize all tags with 0 count
+    for (const tag of allTags) {
+      tagContentCounts.set(tag._id, 0);
+    }
+
+    // Count published events (not archived)
+    for (const event of allEvents) {
+      if (event.isArchived !== true && event.tags) {
+        for (const tagId of event.tags) {
+          const current = tagContentCounts.get(tagId) ?? 0;
+          tagContentCounts.set(tagId, current + 1);
+        }
+      }
+    }
+
+    // Count published projects
+    for (const project of allProjects) {
+      if (project.isPublished === true && project.tags) {
+        for (const tagId of project.tags) {
+          const current = tagContentCounts.get(tagId) ?? 0;
+          tagContentCounts.set(tagId, current + 1);
+        }
+      }
+    }
+
+    // Count published experiments
+    for (const experiment of allExperiments) {
+      if (experiment.isPublished === true && experiment.tags) {
+        for (const tagId of experiment.tags) {
+          const current = tagContentCounts.get(tagId) ?? 0;
+          tagContentCounts.set(tagId, current + 1);
+        }
+      }
+    }
+
+    // Count articles (always counted - no publish state)
+    for (const article of allArticles) {
+      if (article.tags) {
+        for (const tagId of article.tags) {
+          const current = tagContentCounts.get(tagId) ?? 0;
+          tagContentCounts.set(tagId, current + 1);
+        }
+      }
+    }
+
+    // Count published videos
+    for (const video of allVideos) {
+      if (video.isPublished === true && video.tags) {
+        for (const tagId of video.tags) {
+          const current = tagContentCounts.get(tagId) ?? 0;
+          tagContentCounts.set(tagId, current + 1);
+        }
+      }
+    }
+
+    // Sort tags alphabetically by name (case-insensitive)
+    const sortedTags = allTags.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+
+    // Map to return type with content counts
+    return sortedTags.map((tag) => ({
+      _id: tag._id,
+      _creationTime: tag._creationTime,
+      name: tag.name,
+      slug: tag.slug,
+      description: tag.description,
+      contentCount: tagContentCounts.get(tag._id) ?? 0,
+    }));
+  },
+});
+
+/**
  * Get a tag by its slug.
  *
  * Uses the by_slug index for efficient lookup.

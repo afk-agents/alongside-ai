@@ -688,6 +688,355 @@ describe("tags.getContentByTagId query", () => {
   });
 });
 
+describe("tags.list query", () => {
+  it("returns empty array when no tags exist", async () => {
+    const t = convexTest(schema);
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toEqual([]);
+  });
+
+  it("returns all tags sorted alphabetically by name (case-insensitive)", async () => {
+    const t = convexTest(schema);
+
+    // Create tags in non-alphabetical order
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tags", {
+        name: "Zebra",
+        slug: "zebra",
+      });
+      await ctx.db.insert("tags", {
+        name: "alpha",
+        slug: "alpha",
+      });
+      await ctx.db.insert("tags", {
+        name: "Beta",
+        slug: "beta",
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(3);
+    expect(tags[0].name).toBe("alpha");
+    expect(tags[1].name).toBe("Beta");
+    expect(tags[2].name).toBe("Zebra");
+  });
+
+  it("returns tags with correct shape including contentCount", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tags", {
+        name: "LangChain",
+        slug: "langchain",
+        description: "Framework for LLM applications",
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0]).toHaveProperty("_id");
+    expect(tags[0]).toHaveProperty("_creationTime");
+    expect(tags[0]).toHaveProperty("name", "LangChain");
+    expect(tags[0]).toHaveProperty("slug", "langchain");
+    expect(tags[0]).toHaveProperty("description", "Framework for LLM applications");
+    expect(tags[0]).toHaveProperty("contentCount");
+    expect(typeof tags[0].contentCount).toBe("number");
+  });
+
+  it("returns contentCount of 0 for tag with no content", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tags", {
+        name: "Empty Tag",
+        slug: "empty-tag",
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0].contentCount).toBe(0);
+  });
+
+  it("counts published content across all content types", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "AI",
+        slug: "ai",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create one of each published content type with the tag
+      await ctx.db.insert("events", {
+        title: "AI Conference",
+        slug: "ai-conference",
+        description: "Annual AI conference",
+        date: Date.now() + 86400000,
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("projects", {
+        title: "AI Project",
+        slug: "ai-project",
+        description: "An AI project",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("experiments", {
+        title: "AI Experiment",
+        slug: "ai-experiment",
+        description: "Testing AI",
+        authorId: profileId,
+        isPublished: true,
+        status: "prototyping",
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("articles", {
+        title: "AI Article",
+        slug: "ai-article",
+        content: "AI content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+        tags: [tagId],
+      });
+
+      await ctx.db.insert("videos", {
+        title: "AI Video",
+        slug: "ai-video",
+        youtubeId: "ai123",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0].contentCount).toBe(5);
+  });
+
+  it("does not count unpublished content", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Draft",
+        slug: "draft",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create published project (should count)
+      await ctx.db.insert("projects", {
+        title: "Published Project",
+        slug: "published-project",
+        description: "Published",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagId],
+      });
+
+      // Create unpublished project (should NOT count)
+      await ctx.db.insert("projects", {
+        title: "Draft Project",
+        slug: "draft-project",
+        description: "Draft",
+        authorId: profileId,
+        isPublished: false,
+        tags: [tagId],
+      });
+
+      // Create unpublished experiment (should NOT count)
+      await ctx.db.insert("experiments", {
+        title: "Draft Experiment",
+        slug: "draft-experiment",
+        description: "Draft",
+        authorId: profileId,
+        isPublished: false,
+        status: "exploring",
+        tags: [tagId],
+      });
+
+      // Create unpublished video (should NOT count)
+      await ctx.db.insert("videos", {
+        title: "Draft Video",
+        slug: "draft-video",
+        youtubeId: "draft123",
+        authorId: profileId,
+        isPublished: false,
+        tags: [tagId],
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0].contentCount).toBe(1); // Only the published project
+  });
+
+  it("does not count archived events", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Events",
+        slug: "events",
+      });
+
+      // Create non-archived event (should count)
+      await ctx.db.insert("events", {
+        title: "Active Event",
+        slug: "active-event",
+        description: "Active",
+        date: Date.now() + 86400000,
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+      });
+
+      // Create archived event (should NOT count)
+      await ctx.db.insert("events", {
+        title: "Archived Event",
+        slug: "archived-event",
+        description: "Archived",
+        date: Date.now() - 86400000,
+        timezone: "America/New_York",
+        location: "Virtual",
+        isVirtual: true,
+        priceInCents: 0,
+        tags: [tagId],
+        isArchived: true,
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0].contentCount).toBe(1); // Only the active event
+  });
+
+  it("returns correct counts for multiple tags", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      const tagAI = await ctx.db.insert("tags", {
+        name: "AI",
+        slug: "ai",
+      });
+      const tagML = await ctx.db.insert("tags", {
+        name: "ML",
+        slug: "ml",
+      });
+      // Create a tag with no content (not assigned to any content)
+      await ctx.db.insert("tags", {
+        name: "Empty",
+        slug: "empty",
+      });
+
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "member",
+        profileStatus: "published",
+      });
+
+      // Create content with different tags
+      await ctx.db.insert("projects", {
+        title: "AI Project",
+        slug: "ai-project",
+        description: "AI project",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagAI],
+      });
+
+      await ctx.db.insert("projects", {
+        title: "ML Project 1",
+        slug: "ml-project-1",
+        description: "ML project 1",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagML],
+      });
+
+      await ctx.db.insert("projects", {
+        title: "ML Project 2",
+        slug: "ml-project-2",
+        description: "ML project 2",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagML],
+      });
+
+      await ctx.db.insert("articles", {
+        title: "AI Article",
+        slug: "ai-article",
+        content: "AI content",
+        authorId: profileId,
+        publishedAt: Date.now(),
+        tags: [tagAI],
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(3);
+    // Should be alphabetically sorted: AI, Empty, ML
+    expect(tags[0].name).toBe("AI");
+    expect(tags[0].contentCount).toBe(2); // 1 project + 1 article
+
+    expect(tags[1].name).toBe("Empty");
+    expect(tags[1].contentCount).toBe(0);
+
+    expect(tags[2].name).toBe("ML");
+    expect(tags[2].contentCount).toBe(2); // 2 projects
+  });
+
+  it("returns tag without description when description is not set", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tags", {
+        name: "NoDesc",
+        slug: "no-desc",
+      });
+    });
+
+    const tags = await t.query(api.tags.list, {});
+
+    expect(tags).toHaveLength(1);
+    expect(tags[0].description).toBeUndefined();
+  });
+});
+
 describe("tags.create mutation", () => {
   // Helper to create test context with admin user
   async function setupAdminUser(t: TestContext) {
