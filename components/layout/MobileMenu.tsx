@@ -82,14 +82,15 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         <nav className="px-4 py-4">
           <div className="space-y-1">
             {PRIMARY_NAV.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                className="block px-3 py-2 rounded-md text-base text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
-                activeClassName="bg-gray-100 text-gray-900 font-semibold dark:bg-gray-800 dark:text-gray-100"
-              >
-                <span onClick={onClose}>{item.label}</span>
-              </NavLink>
+              <div key={item.href} onClick={onClose}>
+                <NavLink
+                  href={item.href}
+                  className="block px-3 py-2 rounded-md text-base text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+                  activeClassName="bg-gray-100 text-gray-900 font-semibold dark:bg-gray-800 dark:text-gray-100"
+                >
+                  {item.label}
+                </NavLink>
+              </div>
             ))}
 
             {/* Search Link */}

@@ -25,8 +25,8 @@
         "Tests pass"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Created lib/navigation.ts and components/layout/NavLink.tsx with tests."
     },
     {
       "id": "US-005",
@@ -50,8 +50,8 @@
         "Verify in browser: all 10 routes return 200 and display correct heading"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Created 10 placeholder pages with consistent styling."
     },
     {
       "id": "US-002",
@@ -75,8 +75,8 @@
         "Verify in browser: desktop nav visible at ≥768px, hidden at <768px"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Created Header.tsx with desktop nav, search, auth integration, hamburger button."
     },
     {
       "id": "US-004",
@@ -97,8 +97,8 @@
         "Verify in browser: footer displays at bottom of page with all links"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. Created Footer.tsx as server component with utility and social links."
     },
     {
       "id": "US-003",
@@ -126,8 +126,8 @@
         "Verify in browser: hamburger visible <768px, menu opens/closes correctly"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-16. MobileMenu with tests, escape key handling, backdrop click, nav link close on click."
     },
     {
       "id": "US-006",
