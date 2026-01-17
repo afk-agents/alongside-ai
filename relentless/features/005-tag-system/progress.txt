@@ -1,8 +1,8 @@
 ---
 feature: Tag System
 started: 2026-01-16T00:00:00.000Z
-last_updated: '2026-01-17T02:33:16.190Z'
-stories_completed: 7
+last_updated: '2026-01-17T04:40:00.000Z'
+stories_completed: 9
 patterns: []
 ---
 
@@ -312,5 +312,40 @@ patterns: []
 - Convex optional args: use "description" in args check to distinguish between "not provided" vs "explicitly undefined"
 - The patch object should only include description if explicitly passed to allow preserving existing values
 - Slug immutability: never include slug in the patch object, even if name changes
+
+---
+
+## 2026-01-17 - US-009: Admin Delete Tag Mutation
+
+**Implemented:**
+- Added `tags.remove` mutation to `convex/tags.ts`
+  - Args: id (tag ID to delete)
+  - Uses `requireRole(ctx, ['admin'])` to enforce admin-only access
+  - Checks if tag exists, throws error if not found
+  - Removes tag ID from all content types in parallel (events, projects, experiments, articles, videos)
+  - For each content type: queries all, filters for items with tag, patches to remove tag from array
+  - Deletes the tag document using `ctx.db.delete(id)`
+  - Returns null on success
+
+**Files Changed:**
+- convex/tags.ts (modified - added remove mutation)
+- __tests__/convex/tags.test.ts (modified - added 7 tests)
+- relentless/features/005-tag-system/tasks.md (updated)
+- relentless/features/005-tag-system/progress.txt (updated)
+
+**Tests Added (7 total):**
+- admin can delete a tag
+- removes tag reference from all content types when deleted
+- preserves other tags when removing one tag from content
+- handles content with no tags field gracefully
+- non-admin throws AuthorizationError
+- unauthenticated user throws AuthenticationError
+- throws error when tag ID not found
+
+**Learnings:**
+- Array filter to remove specific ID: `tags.filter((tagId) => tagId !== args.id)`
+- Promise.all with spread operator to combine multiple update arrays
+- Content without tags field (undefined) is safely skipped by filter check
+- Testing tag removal: verify content still exists but tag array doesn't contain removed ID
 
 ---

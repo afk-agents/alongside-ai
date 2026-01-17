@@ -493,3 +493,97 @@ export const update = mutation({
     return null;
   },
 });
+
+/**
+ * Delete a tag and remove it from all content (admin only).
+ *
+ * - Requires admin role
+ * - Removes the tag ID from all content types that reference it
+ * - Deletes the tag document
+ * - Returns null on success
+ */
+export const remove = mutation({
+  args: {
+    id: v.id("tags"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Require admin role
+    await requireRole(ctx, ["admin"]);
+
+    // Check if tag exists
+    const existingTag = await ctx.db.get(args.id);
+    if (!existingTag) {
+      throw new Error(`Tag not found with ID: ${args.id}`);
+    }
+
+    // Remove tag from all content types in parallel
+    const [allEvents, allProjects, allExperiments, allArticles, allVideos] =
+      await Promise.all([
+        ctx.db.query("events").collect(),
+        ctx.db.query("projects").collect(),
+        ctx.db.query("experiments").collect(),
+        ctx.db.query("articles").collect(),
+        ctx.db.query("videos").collect(),
+      ]);
+
+    // Update events that have this tag
+    const eventUpdates = allEvents
+      .filter((event) => event.tags?.includes(args.id))
+      .map((event) =>
+        ctx.db.patch(event._id, {
+          tags: event.tags!.filter((tagId) => tagId !== args.id),
+        })
+      );
+
+    // Update projects that have this tag
+    const projectUpdates = allProjects
+      .filter((project) => project.tags?.includes(args.id))
+      .map((project) =>
+        ctx.db.patch(project._id, {
+          tags: project.tags!.filter((tagId) => tagId !== args.id),
+        })
+      );
+
+    // Update experiments that have this tag
+    const experimentUpdates = allExperiments
+      .filter((experiment) => experiment.tags?.includes(args.id))
+      .map((experiment) =>
+        ctx.db.patch(experiment._id, {
+          tags: experiment.tags!.filter((tagId) => tagId !== args.id),
+        })
+      );
+
+    // Update articles that have this tag
+    const articleUpdates = allArticles
+      .filter((article) => article.tags?.includes(args.id))
+      .map((article) =>
+        ctx.db.patch(article._id, {
+          tags: article.tags!.filter((tagId) => tagId !== args.id),
+        })
+      );
+
+    // Update videos that have this tag
+    const videoUpdates = allVideos
+      .filter((video) => video.tags?.includes(args.id))
+      .map((video) =>
+        ctx.db.patch(video._id, {
+          tags: video.tags!.filter((tagId) => tagId !== args.id),
+        })
+      );
+
+    // Execute all updates in parallel
+    await Promise.all([
+      ...eventUpdates,
+      ...projectUpdates,
+      ...experimentUpdates,
+      ...articleUpdates,
+      ...videoUpdates,
+    ]);
+
+    // Delete the tag
+    await ctx.db.delete(args.id);
+
+    return null;
+  },
+});

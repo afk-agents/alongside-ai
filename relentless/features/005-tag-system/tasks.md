@@ -204,26 +204,26 @@
 **Description:** As an admin, I want to delete a tag so that I can remove obsolete topics from the taxonomy.
 
 **Acceptance Criteria:**
-- [ ] `tags.remove` mutation exists in `convex/tags.ts`
-- [ ] Mutation requires admin role
-- [ ] Mutation removes tag ID from all content types that reference it
-- [ ] Mutation deletes the tag document
-- [ ] Former tag URL returns 404
-- [ ] Content items no longer show deleted tag
-- [ ] Returns null on success
-- [ ] Tests cover: admin deletes tag, tag removed from content, non-admin rejection
-- [ ] Typecheck passes
-- [ ] Lint passes
-- [ ] Tests pass
+- [x] `tags.remove` mutation exists in `convex/tags.ts`
+- [x] Mutation requires admin role
+- [x] Mutation removes tag ID from all content types that reference it
+- [x] Mutation deletes the tag document
+- [x] Former tag URL returns 404
+- [x] Content items no longer show deleted tag
+- [x] Returns null on success
+- [x] Tests cover: admin deletes tag, tag removed from content, non-admin rejection
+- [x] Typecheck passes
+- [x] Lint passes
+- [x] Tests pass
 
 **Dependencies:** US-001
 **Phase:** Stories
 **Priority:** P3
-**Status:** pending
+**Status:** completed
 
 **Implementation Tasks:**
-- [ ] T026 [US-007] Write tests for `tags.remove` mutation
-- [ ] T027 [US-007] Implement `tags.remove` mutation with content cleanup
+- [x] T026 [US-007] Write tests for `tags.remove` mutation
+- [x] T027 [US-007] Implement `tags.remove` mutation with content cleanup
 
 ---
 

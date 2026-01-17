@@ -1426,3 +1426,288 @@ describe("tags.update mutation", () => {
     expect(tag?.slug).toBe("langchain");
   });
 });
+
+describe("tags.remove mutation", () => {
+  // Helper to create test context with admin user
+  async function setupAdminUser(t: TestContext) {
+    const { userId, profileId } = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "admin",
+        profileStatus: "published",
+      });
+      return { userId, profileId };
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+      profileId,
+    };
+  }
+
+  async function setupGuestUser(t: TestContext) {
+    const { userId, profileId } = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {});
+      const profileId = await ctx.db.insert("profiles", {
+        userId,
+        role: "guest",
+        profileStatus: "locked",
+      });
+      return { userId, profileId };
+    });
+
+    return {
+      t: t.withIdentity({
+        subject: userId,
+        issuer: "test",
+        tokenIdentifier: `test|${userId}`,
+      }),
+      userId,
+      profileId,
+    };
+  }
+
+  it("admin can delete a tag", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create a tag
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "To Be Deleted",
+        slug: "to-be-deleted",
+      });
+    });
+
+    // Delete the tag
+    const result = await adminCtx.mutation(api.tags.remove, { id: tagId });
+
+    expect(result).toBeNull();
+
+    // Verify tag is deleted
+    const tag = await t.run(async (ctx) => {
+      return await ctx.db.get(tagId);
+    });
+
+    expect(tag).toBeNull();
+  });
+
+  it("removes tag reference from all content types when deleted", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    // Create a tag and assign it to various content types
+    const { tagId, eventId, projectId, experimentId, articleId, videoId } =
+      await t.run(async (ctx) => {
+        const tagId = await ctx.db.insert("tags", {
+          name: "To Remove",
+          slug: "to-remove",
+        });
+
+        // Create content with the tag
+        const eventId = await ctx.db.insert("events", {
+          title: "Test Event",
+          slug: "test-event",
+          description: "Test",
+          date: Date.now(),
+          timezone: "America/New_York",
+          location: "Virtual",
+          isVirtual: true,
+          priceInCents: 0,
+          tags: [tagId],
+        });
+
+        const projectId = await ctx.db.insert("projects", {
+          title: "Test Project",
+          slug: "test-project",
+          description: "Test",
+          authorId: profileId,
+          isPublished: true,
+          tags: [tagId],
+        });
+
+        const experimentId = await ctx.db.insert("experiments", {
+          title: "Test Experiment",
+          slug: "test-experiment",
+          description: "Test",
+          authorId: profileId,
+          isPublished: true,
+          status: "exploring",
+          tags: [tagId],
+        });
+
+        const articleId = await ctx.db.insert("articles", {
+          title: "Test Article",
+          slug: "test-article",
+          content: "Test content",
+          authorId: profileId,
+          publishedAt: Date.now(),
+          tags: [tagId],
+        });
+
+        const videoId = await ctx.db.insert("videos", {
+          title: "Test Video",
+          slug: "test-video",
+          youtubeId: "abc123",
+          authorId: profileId,
+          isPublished: true,
+          tags: [tagId],
+        });
+
+        return { tagId, eventId, projectId, experimentId, articleId, videoId };
+      });
+
+    // Delete the tag
+    await adminCtx.mutation(api.tags.remove, { id: tagId });
+
+    // Verify tag is removed from all content
+    const contents = await t.run(async (ctx) => {
+      return {
+        event: await ctx.db.get(eventId),
+        project: await ctx.db.get(projectId),
+        experiment: await ctx.db.get(experimentId),
+        article: await ctx.db.get(articleId),
+        video: await ctx.db.get(videoId),
+      };
+    });
+
+    // Tag should be removed from all content
+    expect(contents.event?.tags).not.toContain(tagId);
+    expect(contents.project?.tags).not.toContain(tagId);
+    expect(contents.experiment?.tags).not.toContain(tagId);
+    expect(contents.article?.tags).not.toContain(tagId);
+    expect(contents.video?.tags).not.toContain(tagId);
+  });
+
+  it("preserves other tags when removing one tag from content", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    // Create two tags and assign both to a project
+    const { tagToDelete, tagToKeep, projectId } = await t.run(async (ctx) => {
+      const tagToDelete = await ctx.db.insert("tags", {
+        name: "Delete Me",
+        slug: "delete-me",
+      });
+      const tagToKeep = await ctx.db.insert("tags", {
+        name: "Keep Me",
+        slug: "keep-me",
+      });
+
+      const projectId = await ctx.db.insert("projects", {
+        title: "Multi-Tag Project",
+        slug: "multi-tag-project",
+        description: "Has multiple tags",
+        authorId: profileId,
+        isPublished: true,
+        tags: [tagToDelete, tagToKeep],
+      });
+
+      return { tagToDelete, tagToKeep, projectId };
+    });
+
+    // Delete one tag
+    await adminCtx.mutation(api.tags.remove, { id: tagToDelete });
+
+    // Verify only the deleted tag is removed
+    const project = await t.run(async (ctx) => {
+      return await ctx.db.get(projectId);
+    });
+
+    expect(project?.tags).toHaveLength(1);
+    expect(project?.tags).toContain(tagToKeep);
+    expect(project?.tags).not.toContain(tagToDelete);
+  });
+
+  it("handles content with no tags field gracefully", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx, profileId } = await setupAdminUser(t);
+
+    // Create a tag and content without tags
+    const { tagId, projectId } = await t.run(async (ctx) => {
+      const tagId = await ctx.db.insert("tags", {
+        name: "Orphan Tag",
+        slug: "orphan-tag",
+      });
+
+      // Create project without tags field
+      const projectId = await ctx.db.insert("projects", {
+        title: "No Tags Project",
+        slug: "no-tags-project",
+        description: "Has no tags",
+        authorId: profileId,
+        isPublished: true,
+      });
+
+      return { tagId, projectId };
+    });
+
+    // Delete the tag - should not throw
+    const result = await adminCtx.mutation(api.tags.remove, { id: tagId });
+    expect(result).toBeNull();
+
+    // Project should still exist unchanged
+    const project = await t.run(async (ctx) => {
+      return await ctx.db.get(projectId);
+    });
+
+    expect(project).not.toBeNull();
+    expect(project?.tags).toBeUndefined();
+  });
+
+  it("non-admin throws AuthorizationError", async () => {
+    const t = convexTest(schema);
+    const { t: guestCtx } = await setupGuestUser(t);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+      });
+    });
+
+    await expect(
+      guestCtx.mutation(api.tags.remove, { id: tagId })
+    ).rejects.toThrow(/Required role: admin/);
+  });
+
+  it("unauthenticated user throws AuthenticationError", async () => {
+    const t = convexTest(schema);
+
+    const tagId = await t.run(async (ctx) => {
+      return await ctx.db.insert("tags", {
+        name: "Test Tag",
+        slug: "test-tag",
+      });
+    });
+
+    await expect(t.mutation(api.tags.remove, { id: tagId })).rejects.toThrow(
+      /Authentication required/
+    );
+  });
+
+  it("throws error when tag ID not found", async () => {
+    const t = convexTest(schema);
+    const { t: adminCtx } = await setupAdminUser(t);
+
+    // Create and delete a tag to get a valid but non-existent ID
+    const deletedId = await t.run(async (ctx) => {
+      const id = await ctx.db.insert("tags", {
+        name: "Temporary",
+        slug: "temporary",
+      });
+      await ctx.db.delete(id);
+      return id;
+    });
+
+    await expect(
+      adminCtx.mutation(api.tags.remove, { id: deletedId })
+    ).rejects.toThrow(/Tag not found/);
+  });
+});

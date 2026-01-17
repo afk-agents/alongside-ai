@@ -184,8 +184,8 @@
         "Tests pass"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Completed 2026-01-17. Implemented tags.remove mutation that removes tag ID from all content types (events, projects, experiments, articles, videos) before deleting the tag document. Uses requireRole for admin-only access, throws error if tag not found. 7 tests added covering admin deletes tag, tag removed from content, preserves other tags, handles content with no tags, non-admin rejection, unauthenticated rejection, and tag not found."
     }
   ]
 }
