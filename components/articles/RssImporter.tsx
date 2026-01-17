@@ -53,7 +53,8 @@ export function RssImporter() {
   const tags = useQuery(api.tags.list);
 
   // Actions and mutations
-  const parseRssFeed = useAction(api.articles.parseRssFeed);
+  // Note: parseRssFeed is in articlesRss.ts because it requires Node.js runtime
+  const parseRssFeed = useAction(api.articlesRss.parseRssFeed);
   const importFromRss = useMutation(api.articles.importFromRss);
 
   // Filter to only published profiles for author dropdown

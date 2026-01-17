@@ -15,8 +15,10 @@ vi.mock("convex/react", () => ({
 vi.mock("@/convex/_generated/api", () => ({
   api: {
     articles: {
-      parseRssFeed: "articles.parseRssFeed",
       importFromRss: "articles.importFromRss",
+    },
+    articlesRss: {
+      parseRssFeed: "articlesRss.parseRssFeed",
     },
     profiles: {
       list: "profiles.list",
